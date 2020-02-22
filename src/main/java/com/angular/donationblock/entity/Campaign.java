@@ -10,6 +10,7 @@ import javax.persistence.*;
 @Getter
 @Setter
 public class Campaign extends BaseEntity {
+    private Long campaignID;
     private String targetDonation;
     private String campaignName;
     private String category;
@@ -61,6 +62,10 @@ public class Campaign extends BaseEntity {
     public String getCoverImagePath() { return coverImagePath; }
 
     public void setCoverImagePath(String coverImagePath) { this.coverImagePath = coverImagePath; }
+
+    public Long getCampaignID() { return campaignID; }
+
+    public void setCampaignID(Long campaignID) { this.campaignID = campaignID; }
 
     public Campaign(){}
     // standard constructors / setters / getters / toString

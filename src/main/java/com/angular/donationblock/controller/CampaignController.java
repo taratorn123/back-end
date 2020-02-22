@@ -1,6 +1,7 @@
 package com.angular.donationblock.controller;
 
 import com.angular.donationblock.entity.Campaign;
+import com.angular.donationblock.entity.User;
 import com.angular.donationblock.repository.CampaignRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -12,7 +13,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Principal;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:4200")
@@ -20,9 +24,13 @@ public class CampaignController {
     @Autowired
     private CampaignRepository campaignRepository;
 
+    @GetMapping("/campaigns-list")
+    public List<Campaign> getCampaigns() {
+        return (List<Campaign>) campaignRepository.findAll();
+    }
+
     @PostMapping("/campaigns")
     public String addCampaign(@RequestParam("myFile") MultipartFile image, @RequestParam Map<String, String> file) throws IOException {
-//        Campaign img = new Campaign( file.getOriginalFilename(),file.getContentType(),file.getBytes() );
           Campaign campaign = new Campaign();
           Campaign campaignTemp = new Campaign();
 
@@ -34,12 +42,8 @@ public class CampaignController {
           campaign.setCoverImagePath(file.get("coverImagePath"));
 
           campaignTemp = campaignRepository.save(campaign);
-          campaign.setCoverImagePath("D:\\project\\donationblock-1\\src\\assets\\img\\"+campaignTemp.getId()+"\\coverImage\\");
-
-          campaignRepository.save(campaign);
-
-          String directoryName = "D:\\project\\donationblock-1\\src\\assets\\img\\"+campaignTemp.getId();
-          String fileName = "cover";
+          campaign.setCampaignID(campaignTemp.getId());
+          String directoryName = "D:\\project\\front-end\\src\\assets\\img\\"+campaignTemp.getId()+"\\coverImage\\";
 
           File directory = new File(directoryName);
           if (! directory.exists())
@@ -48,24 +52,20 @@ public class CampaignController {
                 // If you require it to make the entire directory path including parents,
                 // use directory.mkdirs(); here instead.
           }
-          String directoryNameFile = directoryName+"\\"+fileName+"\\";
-          File dest = new File(directoryNameFile);
+          File dest = new File(directoryName+"\\"+image.getOriginalFilename()+"\\");
           image.transferTo(dest);
-//        final Campaign savedImage = campaignRepository.save(img);
-//        System.out.println("Image saved");
-//        return savedImage;
-//        String folder = "C:\\photos\\";
-//////        byte[] bytes = file.getBytes();
-//            System.out.println(image.getOriginalFilename());
-//            Path path = Paths.get("D:\\project\\donationblock-1\\src\\assets\\img\\"+campaignTemp.getId()+"\\coverImage\\");
-//
-//            String filePath = "D:\\project\\donationblock-1\\src\\assets\\img\\"+campaignTemp.getId()+"\\coverImage\\";
-//            //File dest = new File(filePath);
-//            image.transferTo(filePath);
-////
-////        return filePath;
-//        byte[] temp = image.getBytes();
+          campaign.setCoverImagePath("../../assets/img/"+campaignTemp.getId()+"/coverImage/"+image.getOriginalFilename());
+          campaignRepository.save(campaign);
 
         return "success";
+    }
+
+    @GetMapping("/campaigns/{campaignID}")
+    public Campaign getCampaignData(@PathVariable Long campaignID){
+        Optional<Campaign> temp = campaignRepository.findById(campaignID);
+        if(temp.isPresent())
+            return campaignRepository.findById(campaignID).get();
+        else
+            return new Campaign();
     }
 }
