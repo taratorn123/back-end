@@ -3,6 +3,9 @@ package com.angular.donationblock.controller;
 import com.angular.donationblock.form.AccountDonationForm;
 import com.angular.donationblock.entity.AccountDonation;
 import com.angular.donationblock.repository.AccountDonationRepository;
+import com.angular.donationblock.repository.CampaignRepository;
+import com.angular.donationblock.repository.UserRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,17 +33,21 @@ public class AccountDonationController {
     @Autowired
     private AccountDonationRepository accountDonationRepository;
     
+    @Autowired CampaignRepository campaignRepository;
+    @Autowired UserRepository userRepository;
     private Server server = new Server("http://35.187.242.245/");
 
     @PostMapping("/sendDonation")
-    public int addToStellar(@RequestBody AccountDonationForm accountDonation) throws IOException 
+    public int addToStellar(@RequestBody AccountDonationForm accountDonationForm) throws IOException 
     {
-    	
-    	System.out.println(accountDonation.getAmount());
-    	System.out.println(accountDonation.getPublicKey());
-    	System.out.println(accountDonation.getPrivateKey());
-    	System.out.println(accountDonation.getDestination());
-    	AccountResponse account = server.accounts().account(accountDonation.getPublicKey());
+    	System.out.println(accountDonationForm.getAmount());
+    	System.out.println(accountDonationForm.getCampaignId());
+    	System.out.println(accountDonationForm.getUserId());
+    	AccountDonation accountDonation = new AccountDonation(
+    			userRepository.findByUsername(accountDonationForm.getUserId()),
+    			campaignRepository.findById(Long.parseLong(accountDonationForm.getCampaignId())).get(),
+    			accountDonationForm.getAmount(),accountDonationForm.getComment(),accountDonationForm.getAnonymousFlag());
+    	AccountResponse account = server.accounts().account(accountDonation.getUser().getPublicKey());
 		System.out.println("Hello "+ account.getAccountId());
 		System.out.println("Balances for account " + account.getAccountId());
 		for (AccountResponse.Balance balance : account.getBalances()) 
@@ -57,10 +64,10 @@ public class AccountDonationController {
 			}
 		}
 		System.out.println("Get Private key");
-    	KeyPair sourceKey = KeyPair.fromSecretSeed(accountDonation.getPrivateKey());
+    	KeyPair sourceKey = KeyPair.fromSecretSeed(accountDonationForm.getPrivateKey());
     	System.out.println("Building Transaction");
 		Transaction transaction = new Transaction.Builder(account,Network.TESTNET)
-		        .addOperation(new PaymentOperation.Builder(accountDonation.getDestination(), new AssetTypeNative(), accountDonation.getAmount()).build())
+		        .addOperation(new PaymentOperation.Builder(accountDonation.getCampaign().getUser().getPublicKey(), new AssetTypeNative(), accountDonation.getAmount()).build())
 		        // A memo allows you to add your own metadata to a transaction. It's
 		        // optional and does not affect how Stellar treats the transaction.
 		        .addMemo(Memo.text(accountDonation.getComment()))
@@ -83,9 +90,9 @@ public class AccountDonationController {
 			}
 			/* If transaction failed DecodedTransactionResult will return option.abest() instead of json*/
 			System.out.println(response.getDecodedTransactionResult());
-			//System.out.println(response.getExtras());
-			this.saveTransaction(new AccountDonation(hash,accountDonation.getAmount(),
-					accountDonation.getComment(),accountDonation.getAnonymousFlag()));
+//			System.out.println(response.getExtras());
+			accountDonation.setTransactionHash(hash);
+			this.saveTransaction(accountDonation);
 			System.out.println("Save database");
 			return 2;
 		} 

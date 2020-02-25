@@ -9,12 +9,16 @@ import javax.persistence.*;
 @Entity
 @Getter
 @Setter
-public class Campaign extends BaseEntity {
-    private Long campaignID;
-    private String targetDonation;
+public class Campaign extends BaseEntity 
+{
+	@ManyToOne(cascade = CascadeType.MERGE)
+	private User user;
+
+	private String targetDonation;
     private String campaignName;
     private String category;
     private String fundRaisingAs;
+    
     @Lob
     private String campaignDetail;
     private String coverImagePath;
@@ -22,7 +26,10 @@ public class Campaign extends BaseEntity {
 //    @OneToOne
 //    private Image coverImage;
 
-
+    public User getUser() 
+    {
+		return user;
+	}
     public String getTargetDonation() {
         return targetDonation;
     }
@@ -62,10 +69,6 @@ public class Campaign extends BaseEntity {
     public String getCoverImagePath() { return coverImagePath; }
 
     public void setCoverImagePath(String coverImagePath) { this.coverImagePath = coverImagePath; }
-
-    public Long getCampaignID() { return campaignID; }
-
-    public void setCampaignID(Long campaignID) { this.campaignID = campaignID; }
 
     public Campaign(){}
     // standard constructors / setters / getters / toString

@@ -1,22 +1,36 @@
 package com.angular.donationblock.form;
 
+
 public class AccountDonationForm 
 {
+	private String campaignId;
+	private String userId;
 	private String amount;
 	private String comment;
-	private String anonymousFlag;
-	private String destination;
-	private String publicKey;
 	private String privateKey;
-	public AccountDonationForm(String amount,String comment,
-			String anonymousFlag,String destination,String publicKey,String privateKey)
+	private String anonymousFlag;
+
+	public AccountDonationForm(String campaignId, String userId,String amount,String comment,
+			String privateKey, String anonymousFlag)
 	{
+		this.campaignId = campaignId;
+		this.userId = userId;
 		this.amount = amount;
 		this.comment=comment;
 		this.anonymousFlag=anonymousFlag;
-		this.destination=destination;
-		this.publicKey=publicKey;
 		this.privateKey=privateKey;
+	}
+	public String getCampaignId() {
+		return campaignId;
+	}
+	public void setCampaignId(String campaignId) {
+		this.campaignId = campaignId;
+	}
+	public String getUserId() {
+		return userId;
+	}
+	public void setUserId(String userId) {
+		this.userId = userId;
 	}
 	public String getAmount() 
 	{
@@ -29,14 +43,6 @@ public class AccountDonationForm
 	public String getAnonymousFlag() 
 	{
 		return anonymousFlag;
-	}
-	public String getDestination() 
-	{
-		return destination;
-	}
-	public String getPublicKey() 
-	{
-		return publicKey;
 	}
 	public String getPrivateKey() 
 	{

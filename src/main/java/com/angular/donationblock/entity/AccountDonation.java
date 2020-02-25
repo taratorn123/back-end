@@ -1,9 +1,11 @@
 package com.angular.donationblock.entity;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.Optional;
 
 @Entity
 public class AccountDonation extends BaseEntity
@@ -14,30 +16,31 @@ public class AccountDonation extends BaseEntity
     private String transactionHash;
     private String anonymousFlag;
     
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.MERGE)
     private Campaign campaign;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.MERGE)
     private User user;
     
-    public AccountDonation()
+    public AccountDonation(User user, Campaign campaign, String amount, String comment, String anonymousFlag)
     {
-    	
-    }
-    public AccountDonation(String transactionHash,String amount,String comment,String anonymousFlag)
-    {
+    	this.user = user;
+    	this.campaign = campaign;
     	this.amount = amount;
     	this.comment = comment;
     	this.anonymousFlag = anonymousFlag;
-    	Date date = new Date();
-    	Long time = date.getTime();
-    	this.timestamp = new Timestamp(time);
-    	this.transactionHash = transactionHash;
     }
 
 	public String getAmount() 
 	{
 		return amount;
+	}
+	public void setTransactionHash(String transactionHash) 
+	{
+		Date date = new Date();
+    	Long time = date.getTime();
+    	this.timestamp = new Timestamp(time);
+		this.transactionHash = transactionHash;
 	}
 	public Timestamp getTimestamp() 
 	{

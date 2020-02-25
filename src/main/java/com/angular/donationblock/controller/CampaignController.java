@@ -42,7 +42,7 @@ public class CampaignController {
           campaign.setCoverImagePath(file.get("coverImagePath"));
 
           campaignTemp = campaignRepository.save(campaign);
-          campaign.setCampaignID(campaignTemp.getId());
+          campaign.setId(campaignTemp.getId());
           String directoryName = "D:\\project\\front-end\\src\\assets\\img\\"+campaignTemp.getId()+"\\coverImage\\";
 
           File directory = new File(directoryName);
