@@ -85,6 +85,7 @@ public class CampaignController {
     @GetMapping("/getHistoryTransaction")
     public List<TransactionForm> getTransaction(@RequestParam Long campaignId)
     {
+    	List<TransactionForm> output = new ArrayList<TransactionForm>();
     	System.out.println("Get history Transaction");
     	Server server = new Server(StellarConfig.stellarServer);
     	String responseAcc = campaignRepository.findById(campaignId).get().getUser().getPublicKey();
@@ -146,6 +147,7 @@ public class CampaignController {
 	  	            output.append(((PaymentOperationResponse) payment).getFrom());
 	  	            System.out.println(output.toString());
 	          	}
+	          	System.out.println("End of this Stream");
     		}
 
     		@Override
@@ -156,6 +158,7 @@ public class CampaignController {
 			
     		}
         });
+    	System.out.println("End Stream");
     	//List<TransactionForm> output = new ArrayList<TransactionForm>();
 		return null;
     	
