@@ -1,5 +1,6 @@
 package com.angular.donationblock.controller;
 
+import com.angular.donationblock.config.StellarConfig;
 import com.angular.donationblock.entity.User;
 import com.angular.donationblock.form.UserForm;
 import com.angular.donationblock.repository.UserRepository;
@@ -76,7 +77,7 @@ public class UserController
     @PostMapping("/users")
     public int addUser(@RequestBody UserForm userForm) throws MalformedURLException, IOException 
     {
-    	Server server = new Server("http://35.187.242.245/");
+    	Server server = new Server(StellarConfig.stellarServer);
     	User userRepo = userRepository.findByUsername(userForm.getUsername());
     	if(userRepo != null)
     	{

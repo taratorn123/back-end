@@ -22,7 +22,12 @@ public class AccountDonation extends BaseEntity
     @ManyToOne(cascade = CascadeType.MERGE)
     private User user;
     
-    public AccountDonation(User user, Campaign campaign, String amount, String comment, String anonymousFlag)
+    
+    public AccountDonation() 
+    {
+	}
+
+	public AccountDonation(User user, Campaign campaign, String amount, String comment, String anonymousFlag)
     {
     	this.user = user;
     	this.campaign = campaign;
