@@ -8,10 +8,10 @@ public class AccountDonationForm
 	private String amount;
 	private String comment;
 	private String privateKey;
-	private String anonymousFlag;
+	private boolean anonymousFlag;
 
 	public AccountDonationForm(String campaignId, String userId,String amount,String comment,
-			String privateKey, String anonymousFlag)
+			String privateKey, boolean anonymousFlag)
 	{
 		this.campaignId = campaignId;
 		this.userId = userId;
@@ -40,7 +40,7 @@ public class AccountDonationForm
 	{
 		return comment;
 	}
-	public String getAnonymousFlag() 
+	public boolean getAnonymousFlag() 
 	{
 		return anonymousFlag;
 	}

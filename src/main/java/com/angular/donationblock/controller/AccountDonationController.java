@@ -1,6 +1,7 @@
 package com.angular.donationblock.controller;
 
 import com.angular.donationblock.form.AccountDonationForm;
+import com.angular.donationblock.config.StellarConfig;
 import com.angular.donationblock.entity.AccountDonation;
 import com.angular.donationblock.repository.AccountDonationRepository;
 import com.angular.donationblock.repository.CampaignRepository;
@@ -10,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.stellar.sdk.AssetTypeNative;
 import org.stellar.sdk.KeyPair;
@@ -29,13 +29,14 @@ import java.io.IOException;
  * restricting the resources implemented in web browsers. 
  * It prevents the JavaScript code producing or consuming the requests against different origin.*/
 @CrossOrigin
-public class AccountDonationController {
+public class AccountDonationController 
+{
     @Autowired
     private AccountDonationRepository accountDonationRepository;
     
     @Autowired CampaignRepository campaignRepository;
     @Autowired UserRepository userRepository;
-    private Server server = new Server("http://35.187.242.245/");
+    private Server server = new Server(StellarConfig.stellarServer);
 
     @PostMapping("/sendDonation")
     public int addToStellar(@RequestBody AccountDonationForm accountDonationForm) throws IOException 
@@ -110,4 +111,5 @@ public class AccountDonationController {
     {
     	accountDonationRepository.save(accountDonation);
     }
+
 }

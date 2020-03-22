@@ -14,7 +14,7 @@ public class AccountDonation extends BaseEntity
     private Timestamp timestamp;
     private String comment;
     private String transactionHash;
-    private String anonymousFlag;
+    private boolean anonymousFlag;
     
     @ManyToOne(cascade = CascadeType.MERGE)
     private Campaign campaign;
@@ -22,7 +22,12 @@ public class AccountDonation extends BaseEntity
     @ManyToOne(cascade = CascadeType.MERGE)
     private User user;
     
-    public AccountDonation(User user, Campaign campaign, String amount, String comment, String anonymousFlag)
+    
+    public AccountDonation() 
+    {
+	}
+
+	public AccountDonation(User user, Campaign campaign, String amount, String comment, boolean anonymousFlag)
     {
     	this.user = user;
     	this.campaign = campaign;
@@ -54,7 +59,7 @@ public class AccountDonation extends BaseEntity
 	{
 		return transactionHash;
 	}
-	public String getAnonymousFlag() 
+	public boolean getAnonymousFlag() 
 	{
 		return anonymousFlag;
 	}
