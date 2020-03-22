@@ -8,4 +8,6 @@ import com.angular.donationblock.entity.Campaign;
 
 public interface AccountDonationRepository extends JpaRepository<AccountDonation, Long> 
 {
+	List<AccountDonation> findAllByCampaignId(Long campaignId);
+	AccountDonation findByTransactionHash(String transactionHash);
 }

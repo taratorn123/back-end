@@ -10,6 +10,7 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.web.bind.annotation.*;
 import org.stellar.sdk.KeyPair;
 import org.stellar.sdk.Server;
+import org.stellar.sdk.requests.ErrorResponse;
 import org.stellar.sdk.responses.AccountResponse;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.validation.BindingResult;
@@ -50,15 +51,18 @@ public class UserController
     @PostMapping("/findByUsername")
     public boolean findByUsername(@RequestBody User user) 
     {
+    	System.out.println("Searching for user");
         User userRepo  = userRepository.findByUsername(user.getUsername());
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         if(null != userRepo) 
         {
             if (encoder.matches(user.getPassword(), userRepo.getPassword())) 
             {
+            	System.out.println("User found");
                 return true;
             }
         }
+        System.out.println("User not found");
         return false;
     }
     @PostMapping("/test")
@@ -67,13 +71,11 @@ public class UserController
 		System.out.println("Test");
 		return 1;
 	}
-//@PostMapping("/findByUsername")
-//void findByUsername(@RequestBody User user) {
-//    BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-//    user.setPassword(passwordEncoder.encode(user.getPassword()));
-//    userRepository.save(user);
-//}
 
+    /**
+     * This method use to received userForm from frontend and send it to Stellar network
+     * then save result into database
+     * */
     @PostMapping("/users")
     public int addUser(@RequestBody UserForm userForm) throws MalformedURLException, IOException 
     {
@@ -88,35 +90,43 @@ public class UserController
 		System.out.println(pair.getAccountId());
 		String friendbotUrl = String.format("https://friendbot.stellar.org/?addr=%s",pair.getAccountId());
 		InputStream response = new URL(friendbotUrl).openStream();
+		System.out.println(pair.getAccountId());
 		String body = new Scanner(response, "UTF-8").useDelimiter("\\A").next();
 		System.out.println("SUCCESS! You have a new account :)\n" + body);
-		AccountResponse account = server.accounts().account(pair.getAccountId());
-		System.out.println("Balances for account " + pair.getAccountId());
-		for (AccountResponse.Balance balance : account.getBalances()) 
+		try
 		{
-		  System.out.println(String.format(
-		    "Type: %s, Code: %s, Balance: %s",
-		    balance.getAssetType(),
-		    balance.getAssetCode(),
-		    balance.getBalance()));
+			AccountResponse account = server.accounts().account(pair.getAccountId());
+			System.out.println("Balances for account " + pair.getAccountId());
+			for (AccountResponse.Balance balance : account.getBalances()) 
+			{
+			  System.out.println(String.format(
+			    "Type: %s, Code: %s, Balance: %s",
+			    balance.getAssetType(),
+			    balance.getAssetCode(),
+			    balance.getBalance()));
+			}
+	        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+	        if(userForm.isVerificationFlag())
+	        {
+	        	User user = new User(userForm.getFirstName(),userForm.getLastName(),userForm.getEmail(),
+	        			userForm.getUsername(),passwordEncoder.encode(userForm.getPassword()),
+	        			pair.getAccountId(),userForm.getRouteSignatureImage(),userForm.getRouteImageVerification());
+	        	userRepository.save(user);
+	        	System.out.println("Saving database with image path");
+	        }
+	        else
+	        {
+	        	User user = new User(userForm.getFirstName(),userForm.getLastName(),userForm.getEmail(),
+	        			userForm.getUsername(),passwordEncoder.encode(userForm.getPassword()),
+	        			pair.getAccountId());
+	        	userRepository.save(user);
+	        	System.out.println("Saving database");
+	        }
 		}
-        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        if(userForm.isVerificationFlag())
-        {
-        	User user = new User(userForm.getFirstName(),userForm.getLastName(),userForm.getEmail(),
-        			userForm.getUsername(),passwordEncoder.encode(userForm.getPassword()),
-        			pair.getAccountId(),userForm.getRouteSignatureImage(),userForm.getRouteImageVerification());
-        	userRepository.save(user);
-        	System.out.println("Saving database with image path");
-        }
-        else
-        {
-        	User user = new User(userForm.getFirstName(),userForm.getLastName(),userForm.getEmail(),
-        			userForm.getUsername(),passwordEncoder.encode(userForm.getPassword()),
-        			pair.getAccountId());
-        	userRepository.save(user);
-        	System.out.println("Saving database");
-        }
+		catch(ErrorResponse e)
+		{
+			System.out.println(e.getBody());
+		}
         return 1;
     }
 }

@@ -4,8 +4,11 @@ import com.angular.donationblock.config.StellarConfig;
 import com.angular.donationblock.entity.AccountDonation;
 import com.angular.donationblock.entity.Campaign;
 import com.angular.donationblock.entity.User;
-import com.angular.donationblock.form.TransactionForm;
+import com.angular.donationblock.model.TransactionModel;
+import com.angular.donationblock.repository.AccountDonationRepository;
 import com.angular.donationblock.repository.CampaignRepository;
+import com.angular.donationblock.repository.UserRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,8 +17,10 @@ import org.stellar.sdk.AssetTypeCreditAlphaNum;
 import org.stellar.sdk.AssetTypeNative;
 import org.stellar.sdk.KeyPair;
 import org.stellar.sdk.Server;
+import org.stellar.sdk.requests.ErrorResponse;
 import org.stellar.sdk.requests.EventListener;
 import org.stellar.sdk.requests.PaymentsRequestBuilder;
+import org.stellar.sdk.requests.TooManyRequestsException;
 import org.stellar.sdk.responses.TransactionResponse;
 import org.stellar.sdk.responses.operations.OperationResponse;
 import org.stellar.sdk.responses.operations.PaymentOperationResponse;
@@ -27,6 +32,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Principal;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +43,10 @@ import java.util.Optional;
 public class CampaignController {
     @Autowired
     private CampaignRepository campaignRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private AccountDonationRepository accountDonationRepository;
 
     @GetMapping("/campaigns-list")
     public List<Campaign> getCampaigns() {
@@ -57,7 +67,7 @@ public class CampaignController {
 
           campaignTemp = campaignRepository.save(campaign);
           campaign.setId(campaignTemp.getId());
-          String directoryName = "D:\\project\\front-end\\src\\assets\\img\\"+campaignTemp.getId()+"\\coverImage\\";
+          String directoryName = "D:\\GithubJr\\front-end\\src\\assets\\img\\"+campaignTemp.getId()+"\\coverImage\\";
 
           File directory = new File(directoryName);
           if (! directory.exists())
@@ -74,93 +84,84 @@ public class CampaignController {
         return "success";
     }
 
-    @GetMapping("/campaigns/{campaignID}")
-    public Campaign getCampaignData(@PathVariable Long campaignID){
-        Optional<Campaign> temp = campaignRepository.findById(campaignID);
+    @GetMapping("/campaigns/{campaignId}")
+    public Campaign getCampaignData(@PathVariable Long campaignId){
+        Optional<Campaign> temp = campaignRepository.findById(campaignId);
         if(temp.isPresent())
-            return campaignRepository.findById(campaignID).get();
+            return campaignRepository.findById(campaignId).get();
         else
             return new Campaign();
     }
-    @GetMapping("/getHistoryTransaction")
-    public List<TransactionForm> getTransaction(@RequestParam Long campaignId)
+    
+    /**
+     * This method use to query out all transaction that has been sent to the 
+     * selected campaign and return as TransactionForm
+     * */
+    
+    @GetMapping("/getHistoryTransactionCampaign/{campaignId}")
+    public List<TransactionModel> getHistoryTransactionCampaign(@PathVariable Long campaignId)
     {
-    	List<TransactionForm> output = new ArrayList<TransactionForm>();
+    	List<TransactionModel> transactionHistory = new ArrayList<TransactionModel>();
+    	List<AccountDonation> systemTransaction = accountDonationRepository.findAllByCampaignId(campaignId);
+    	Campaign campaign = campaignRepository.findById(campaignId).get();
     	System.out.println("Get history Transaction");
     	Server server = new Server(StellarConfig.stellarServer);
-    	String responseAcc = campaignRepository.findById(campaignId).get().getUser().getPublicKey();
+    	String responseAcc = campaign.getUser().getPublicKey();
+    	
     	System.out.println(responseAcc);
     	PaymentsRequestBuilder paymentsRequest = server.payments().forAccount(responseAcc);
-    	System.out.println("Received paymentRequest");
-    	paymentsRequest.stream(new EventListener <OperationResponse>()
-        {
-   
-    		private KeyPair account;
-
-    		@SuppressWarnings("unlikely-arg-type")
-    		@Override
-    		public void onEvent(OperationResponse payment) 
-    		{
-	  			System.out.println("Test");
-	  			account = KeyPair.fromAccountId(responseAcc);
-	          	if (payment instanceof PaymentOperationResponse) 
-	          	{
-	          		if (((PaymentOperationResponse) payment).getTo().equals(account)) 
-	          		{
-	          			return;
-	          		}
-	          		String hash = ((PaymentOperationResponse) payment).getTransactionHash();
-	          		try 
-	          		{
-	  					TransactionResponse tmp = server.transactions().transaction(hash);
-	  					System.out.println(tmp.getSourceAccount());
-	  					System.out.println(tmp.getEnvelopeXdr());
-	  				} 
-	          		catch (IOException e) 
-	          		{
-	  					// TODO Auto-generated catch block
-	  					e.printStackTrace();
-	  				}
-	          		String source = ((PaymentOperationResponse) payment).getFrom();
-	          		String amount = ((PaymentOperationResponse) payment).getAmount();
-	
-	          		Asset asset = ((PaymentOperationResponse) payment).getAsset();
-	          		String assetName;
-	          		if (asset.equals(new AssetTypeNative())) 
-	          		{
-	  	              assetName = "lumens";
-	  	            } 
-	  	            else 
-	  	            {
-	  	              StringBuilder assetNameBuilder = new StringBuilder();
-	  	              assetNameBuilder.append(((AssetTypeCreditAlphaNum) asset).getCode());
-	  	              assetNameBuilder.append(":");
-	  	              assetNameBuilder.append(((AssetTypeCreditAlphaNum) asset).getIssuer());
-	  	              assetName = assetNameBuilder.toString();
-	  	            }
-	  	
-	  	            StringBuilder output = new StringBuilder();
-	  	            output.append(amount);
-	  	            output.append(" ");
-	  	            output.append(assetName);
-	  	            output.append(" from ");
-	  	            output.append(((PaymentOperationResponse) payment).getFrom());
-	  	            System.out.println(output.toString());
-	          	}
-	          	System.out.println("End of this Stream");
-    		}
-
-    		@Override
-    		public void onFailure(shadow.com.google.common.base.Optional<Throwable> arg0,
-				shadow.com.google.common.base.Optional<Integer> arg1) 
-    		{
-    			// TODO Auto-generated method stub
-			
-    		}
-        });
-    	System.out.println("End Stream");
-    	//List<TransactionForm> output = new ArrayList<TransactionForm>();
-		return null;
+		try 
+		{
+			for(OperationResponse payment : paymentsRequest.execute().getRecords())
+			{
+				if (payment instanceof PaymentOperationResponse) 
+				{
+					User user = userRepository.findByPublicKey(((PaymentOperationResponse) payment).getFrom());
+					if(user != null)
+					{
+						for(AccountDonation transaction : systemTransaction)
+						{
+							if(transaction.getTransactionHash().compareTo(payment.getTransactionHash()) == 0)
+							{
+								System.out.println(transaction.getTransactionHash()+"\n"+payment.getTransactionHash());
+								if(transaction.getAnonymousFlag() == true)
+								{
+									transactionHistory.add(new TransactionModel(campaign.getCampaignName(),
+											transaction.getTimestamp(),
+											user.getPublicKey(),
+											transaction.getAmount(),
+											campaign.getUser().getPublicKey(),
+											transaction.getTransactionHash()));
+								}
+								else
+								{
+									transactionHistory.add(new TransactionModel(campaign.getCampaignName(),
+											transaction.getTimestamp(),
+											user.getUsername(),
+											transaction.getAmount(),
+											campaign.getUser().getPublicKey(),
+											transaction.getTransactionHash()));
+								}
+								System.out.println(systemTransaction.size());
+								systemTransaction.remove(transaction);
+								break;
+							}
+								
+						}
+					}
+				}
+			}
+			for(TransactionModel transaction : transactionHistory)
+			{
+				System.out.println(transaction.toString());
+			}
+		}
+		catch (TooManyRequestsException | IOException e1) 
+		{
+			// TODO Auto-generated catch b0lock
+			e1.printStackTrace();
+		} 
+		return (List<TransactionModel>) transactionHistory;
     	
     }
 }
