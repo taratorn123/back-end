@@ -65,13 +65,14 @@ public class UserController
         System.out.println("User not found");
         return false;
     }
-    @PostMapping("/test")
-	public int test(@RequestBody UserForm user)
-	{
-		System.out.println("Test");
-		return 1;
-	}
 
+    @PostMapping("/getUserId")
+    public String getUserId(@RequestBody User user)
+    {
+    	User userRepo = userRepository.findByUsername(user.getUsername());
+    	System.out.println(userRepo.getId());
+    	return userRepo.getId().toString();
+    }
     /**
      * This method use to received userForm from frontend and send it to Stellar network
      * then save result into database

@@ -43,10 +43,6 @@ import java.util.Optional;
 public class CampaignController {
     @Autowired
     private CampaignRepository campaignRepository;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private AccountDonationRepository accountDonationRepository;
 
     @GetMapping("/campaigns-list")
     public List<Campaign> getCampaigns() {
@@ -93,75 +89,5 @@ public class CampaignController {
             return new Campaign();
     }
     
-    /**
-     * This method use to query out all transaction that has been sent to the 
-     * selected campaign and return as TransactionForm
-     * */
-    
-    @GetMapping("/getHistoryTransactionCampaign/{campaignId}")
-    public List<TransactionModel> getHistoryTransactionCampaign(@PathVariable Long campaignId)
-    {
-    	List<TransactionModel> transactionHistory = new ArrayList<TransactionModel>();
-    	List<AccountDonation> systemTransaction = accountDonationRepository.findAllByCampaignId(campaignId);
-    	Campaign campaign = campaignRepository.findById(campaignId).get();
-    	System.out.println("Get history Transaction");
-    	Server server = new Server(StellarConfig.stellarServer);
-    	String responseAcc = campaign.getUser().getPublicKey();
-    	
-    	System.out.println(responseAcc);
-    	PaymentsRequestBuilder paymentsRequest = server.payments().forAccount(responseAcc);
-		try 
-		{
-			for(OperationResponse payment : paymentsRequest.execute().getRecords())
-			{
-				if (payment instanceof PaymentOperationResponse) 
-				{
-					User user = userRepository.findByPublicKey(((PaymentOperationResponse) payment).getFrom());
-					if(user != null)
-					{
-						for(AccountDonation transaction : systemTransaction)
-						{
-							if(transaction.getTransactionHash().compareTo(payment.getTransactionHash()) == 0)
-							{
-								System.out.println(transaction.getTransactionHash()+"\n"+payment.getTransactionHash());
-								if(transaction.getAnonymousFlag() == true)
-								{
-									transactionHistory.add(new TransactionModel(campaign.getCampaignName(),
-											transaction.getTimestamp(),
-											user.getPublicKey(),
-											transaction.getAmount(),
-											campaign.getUser().getPublicKey(),
-											transaction.getTransactionHash()));
-								}
-								else
-								{
-									transactionHistory.add(new TransactionModel(campaign.getCampaignName(),
-											transaction.getTimestamp(),
-											user.getUsername(),
-											transaction.getAmount(),
-											campaign.getUser().getPublicKey(),
-											transaction.getTransactionHash()));
-								}
-								System.out.println(systemTransaction.size());
-								systemTransaction.remove(transaction);
-								break;
-							}
-								
-						}
-					}
-				}
-			}
-			for(TransactionModel transaction : transactionHistory)
-			{
-				System.out.println(transaction.toString());
-			}
-		}
-		catch (TooManyRequestsException | IOException e1) 
-		{
-			// TODO Auto-generated catch b0lock
-			e1.printStackTrace();
-		} 
-		return (List<TransactionModel>) transactionHistory;
-    	
-    }
+  
 }
