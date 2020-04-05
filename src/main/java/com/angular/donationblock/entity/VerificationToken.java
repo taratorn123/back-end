@@ -1,10 +1,13 @@
 package com.angular.donationblock.entity;
 
-import java.sql.Date;
 import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -30,11 +33,14 @@ public class VerificationToken extends BaseEntity
     {
     	
     }
+    
     public VerificationToken(String token,User user)
     {
     	this.token = token;
     	this.user = user;
+    	/* Token will be expired in 5 minutes after its created*/
     	this.expiryDate = calculateExpiryDate(5);
+    	System.out.println("Verification Token constructor "+this.expiryDate.toString());
     }
 	public String getToken() 
 	{
@@ -50,7 +56,6 @@ public class VerificationToken extends BaseEntity
 	{
 		return expiryDate;
 	}
-
 	public void setExpiryDate(Date expiryDate) 
 	{
 		this.expiryDate = expiryDate;
@@ -62,9 +67,21 @@ public class VerificationToken extends BaseEntity
 	}
     public Date calculateExpiryDate(int expiryTimeInMinutes) 
     {
+    	SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");  
         Calendar cal = Calendar.getInstance();
         cal.setTime(new Timestamp(cal.getTime().getTime()));
         cal.add(Calendar.MINUTE, expiryTimeInMinutes);
-        return new Date(cal.getTime().getTime());
+        String tmp = formatter.format(new Date(cal.getTime().getTime()));
+        try 
+        {
+			Date date = formatter.parse(tmp);
+			return date;
+		} 
+        catch (ParseException e) 
+        {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        return null;
     }
 }

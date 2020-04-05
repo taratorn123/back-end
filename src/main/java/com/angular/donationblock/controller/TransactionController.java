@@ -24,6 +24,7 @@ import org.stellar.sdk.Network;
 import org.stellar.sdk.PaymentOperation;
 import org.stellar.sdk.Server;
 import org.stellar.sdk.Transaction;
+import org.stellar.sdk.requests.ErrorResponse;
 import org.stellar.sdk.requests.PaymentsRequestBuilder;
 import org.stellar.sdk.requests.TooManyRequestsException;
 import org.stellar.sdk.responses.AccountResponse;
@@ -46,14 +47,15 @@ public class TransactionController
     @Autowired
     private AccountDonationRepository accountDonationRepository;
     @Autowired 
-    CampaignRepository campaignRepository;
+    private CampaignRepository campaignRepository;
     @Autowired 
-    UserRepository userRepository;
+    private UserRepository userRepository;
     private Server server = new Server(StellarConfig.stellarServer);
 
     @PostMapping("/sendDonation")
     public int addToStellar(@RequestBody AccountDonationForm accountDonationForm) throws IOException 
     {
+    	Transaction transaction;
     	System.out.println(accountDonationForm.getAmount());
     	System.out.println(accountDonationForm.getCampaignId());
     	System.out.println(accountDonationForm.getUserId());
@@ -64,6 +66,7 @@ public class TransactionController
     	AccountResponse account = server.accounts().account(accountDonation.getUser().getPublicKey());
 		System.out.println("Hello "+ account.getAccountId());
 		System.out.println("Balances for account " + account.getAccountId());
+		/* Check if user have enough balance to donate money, if not return 0*/
 		for (AccountResponse.Balance balance : account.getBalances()) 
 		{
 			System.out.println("Im here 1");
@@ -77,22 +80,38 @@ public class TransactionController
 				}
 			}
 		}
+		
 		System.out.println("Get Private key");
     	KeyPair sourceKey = KeyPair.fromSecretSeed(accountDonationForm.getPrivateKey());
     	System.out.println("Building Transaction");
-		Transaction transaction = new Transaction.Builder(account,Network.TESTNET)
-		        .addOperation(new PaymentOperation.Builder(accountDonation.getCampaign().getUser().getPublicKey(), new AssetTypeNative(), accountDonation.getAmount()).build())
-		        // A memo allows you to add your own metadata to a transaction. It's
-		        // optional and does not affect how Stellar treats the transaction.
-		        .addMemo(Memo.text(accountDonation.getComment()))
-		        // Wait a maximum of three minutes for the transaction
-		        .setTimeout(180)
-		        .setOperationFee(100)
-		        .build();
-		// Sign the transaction to prove you are actually the person sending it.
-		System.out.println("Signing");
-		transaction.sign(sourceKey);
-		try 
+    	if(accountDonationForm.getComment() == null)
+    	{
+    		transaction = new Transaction.Builder(account,Network.TESTNET)
+    		        .addOperation(new PaymentOperation.Builder(accountDonation.getCampaign().getUser().getPublicKey(), new AssetTypeNative(), accountDonation.getAmount()).build())
+    		        // Wait a maximum of three minutes for the transaction
+    		        .setTimeout(180)
+    		        .setOperationFee(100)
+    		        .build();
+    		// Sign the transaction to prove you are actually the person sending it.
+    		System.out.println("Signing");
+    		transaction.sign(sourceKey);
+    	}
+    	else
+    	{
+    		transaction = new Transaction.Builder(account,Network.TESTNET)
+    		        .addOperation(new PaymentOperation.Builder(accountDonation.getCampaign().getUser().getPublicKey(), new AssetTypeNative(), accountDonation.getAmount()).build())
+    		        // A memo allows you to add your own metadata to a transaction. It's
+    		        // optional and does not affect how Stellar treats the transaction.
+    		        .addMemo(Memo.text(accountDonation.getComment()))
+    		        // Wait a maximum of three minutes for the transaction
+    		        .setTimeout(180)
+    		        .setOperationFee(100)
+    		        .build();
+    		// Sign the transaction to prove you are actually the person sending it.
+    		System.out.println("Signing");
+    		transaction.sign(sourceKey);
+    	}
+    	try 
 		{
 			System.out.println("Get response from serve");
 			SubmitTransactionResponse response = server.submitTransaction(transaction);
@@ -104,7 +123,6 @@ public class TransactionController
 			}
 			/* If transaction failed DecodedTransactionResult will return option.abest() instead of json*/
 			System.out.println(response.getDecodedTransactionResult());
-//			System.out.println(response.getExtras());
 			accountDonation.setTransactionHash(hash);
 			this.saveTransaction(accountDonation);
 			System.out.println("Save database");
@@ -142,7 +160,6 @@ public class TransactionController
     	System.out.println("Get history Transaction");
     	Server server = new Server(StellarConfig.stellarServer);
     	String responseAcc = campaign.getUser().getPublicKey();
-    	
     	System.out.println("Campaign owner public key : "+responseAcc);
     	PaymentsRequestBuilder paymentsRequest = server.payments().forAccount(responseAcc);
 		try 
@@ -195,6 +212,13 @@ public class TransactionController
 			// TODO Auto-generated catch b0lock
 			e1.printStackTrace();
 		} 
+		catch (ErrorResponse e2)
+		{
+			System.out.println("Body "+e2.getBody());
+			System.out.println("Message "+e2.getMessage());
+			System.out.println("GetCause "+e2.getCause());
+			System.out.println("To string "+e2.toString());
+		}
 		return (List<TransactionModel>) transactionHistory;
     }
     
@@ -246,5 +270,4 @@ public class TransactionController
 		} 
 		return (List<TransactionModel>) transactionHistory;
     }
-
 }

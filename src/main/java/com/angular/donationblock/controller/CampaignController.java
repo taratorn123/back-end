@@ -45,12 +45,14 @@ public class CampaignController {
     private CampaignRepository campaignRepository;
 
     @GetMapping("/campaigns-list")
-    public List<Campaign> getCampaigns() {
+    public List<Campaign> getCampaigns() 
+    {
         return (List<Campaign>) campaignRepository.findAll();
     }
 
     @PostMapping("/campaigns")
-    public String addCampaign(@RequestParam("myFile") MultipartFile image, @RequestParam Map<String, String> file) throws IOException {
+    public String addCampaign(@RequestParam("myFile") MultipartFile image, @RequestParam Map<String, String> file) throws IOException 
+    {
           Campaign campaign = new Campaign();
           Campaign campaignTemp = new Campaign();
 

@@ -40,6 +40,10 @@ public class AccountDonation extends BaseEntity
 	{
 		return amount;
 	}
+	public void setAmount(String amount)
+	{
+		this.amount = amount;
+	}
 	public void setTransactionHash(String transactionHash) 
 	{
 		Date date = new Date();
@@ -70,5 +74,10 @@ public class AccountDonation extends BaseEntity
 	public User getUser() 
 	{
 		return user;
+	}
+	public String toString()
+	{
+		return "ID : "+this.getId()+" From "+this.getUser().getUsername()+
+				" To "+this.getCampaign().getCampaignName()+" Amount "+this.getAmount();
 	}
 }

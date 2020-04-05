@@ -17,6 +17,7 @@ public class User extends BaseEntity
     private String email;
     private boolean verificationFlag;
     private int privilegeLevel;
+    @Column(updatable=false)
     private String publicKey;
     private String routeSignatureImage;
     private String routeImageVerification;

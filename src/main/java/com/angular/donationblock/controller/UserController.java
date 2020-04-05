@@ -34,6 +34,9 @@ public class UserController
 
     @Autowired
     private UserRepository userRepository;
+    
+	private Server server;
+	private Scanner scanner;
 
     @GetMapping("/users")
     public List<User> getUsers() 
@@ -66,68 +69,89 @@ public class UserController
         return false;
     }
 
-    @PostMapping("/getUserId")
-    public String getUserId(@RequestBody User user)
+    @GetMapping("/getUserId/{username}")
+    public String getUserId(@PathVariable String username)
     {
-    	User userRepo = userRepository.findByUsername(user.getUsername());
+    	User userRepo = userRepository.findByUsername(username);
     	System.out.println(userRepo.getId());
     	return userRepo.getId().toString();
     }
+    
+    @GetMapping("/checkVerification/{id}")
+    public int getVerification(@PathVariable long id)
+    {
+    	User userRepo = userRepository.findById(id).get();
+    	if(!userRepo.isEnabled())
+    	{
+    		return 0;
+    	}
+    	return 1;
+    }
+    
+    
     /**
      * This method use to received userForm from frontend and send it to Stellar network
      * then save result into database
      * */
+    
     @PostMapping("/users")
-    public int addUser(@RequestBody UserForm userForm) throws MalformedURLException, IOException 
+    public long addUser(@RequestBody UserForm userForm) throws MalformedURLException, IOException 
     {
-    	Server server = new Server(StellarConfig.stellarServer);
+    	User user;
+    	server = new Server(StellarConfig.stellarServer);
     	User userRepo = userRepository.findByUsername(userForm.getUsername());
     	if(userRepo != null)
     	{
     		return 0;
     	}
+    	System.out.println("This is user username   "+userForm.getUsername());
     	KeyPair pair = KeyPair.random();
 		System.out.println(new String(pair.getSecretSeed()));
 		System.out.println(pair.getAccountId());
 		String friendbotUrl = String.format("https://friendbot.stellar.org/?addr=%s",pair.getAccountId());
 		InputStream response = new URL(friendbotUrl).openStream();
 		System.out.println(pair.getAccountId());
-		String body = new Scanner(response, "UTF-8").useDelimiter("\\A").next();
+		scanner = new Scanner(response, "UTF-8");
+		String body = scanner.useDelimiter("\\A").next();
 		System.out.println("SUCCESS! You have a new account :)\n" + body);
-		try
+		while(true)
 		{
-			AccountResponse account = server.accounts().account(pair.getAccountId());
-			System.out.println("Balances for account " + pair.getAccountId());
-			for (AccountResponse.Balance balance : account.getBalances()) 
+			try
 			{
-			  System.out.println(String.format(
-			    "Type: %s, Code: %s, Balance: %s",
-			    balance.getAssetType(),
-			    balance.getAssetCode(),
-			    balance.getBalance()));
+				AccountResponse account = server.accounts().account(pair.getAccountId());
+				System.out.println("Balances for account " + pair.getAccountId());
+				for (AccountResponse.Balance balance : account.getBalances()) 
+				{
+				  System.out.println(String.format(
+				    "Type: %s, Code: %s, Balance: %s",
+				    balance.getAssetType(),
+				    balance.getAssetCode(),
+				    balance.getBalance()));
+				}
+		        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+		        if(userForm.isVerificationFlag())
+		        {
+		        	user = new User(userForm.getFirstName(),userForm.getLastName(),userForm.getEmail(),
+		        			userForm.getUsername(),passwordEncoder.encode(userForm.getPassword()),
+		        			pair.getAccountId(),userForm.getRouteSignatureImage(),userForm.getRouteImageVerification());
+		        	userRepository.save(user);
+		        	System.out.println("Saving database with image path");
+		        }
+		        else
+		        {
+		        	user = new User(userForm.getFirstName(),userForm.getLastName(),userForm.getEmail(),
+		        			userForm.getUsername(),passwordEncoder.encode(userForm.getPassword()),
+		        			pair.getAccountId());
+		        	userRepository.save(user);
+		        	System.out.println("Saving database");
+		        }
+		        break;
 			}
-	        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-	        if(userForm.isVerificationFlag())
-	        {
-	        	User user = new User(userForm.getFirstName(),userForm.getLastName(),userForm.getEmail(),
-	        			userForm.getUsername(),passwordEncoder.encode(userForm.getPassword()),
-	        			pair.getAccountId(),userForm.getRouteSignatureImage(),userForm.getRouteImageVerification());
-	        	userRepository.save(user);
-	        	System.out.println("Saving database with image path");
-	        }
-	        else
-	        {
-	        	User user = new User(userForm.getFirstName(),userForm.getLastName(),userForm.getEmail(),
-	        			userForm.getUsername(),passwordEncoder.encode(userForm.getPassword()),
-	        			pair.getAccountId());
-	        	userRepository.save(user);
-	        	System.out.println("Saving database");
-	        }
+			catch(ErrorResponse e)
+			{
+				System.out.println(e.getBody());
+			}
 		}
-		catch(ErrorResponse e)
-		{
-			System.out.println(e.getBody());
-		}
-        return 1;
+        return user.getId();
     }
 }

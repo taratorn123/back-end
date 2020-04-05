@@ -1,6 +1,11 @@
 package com.angular.donationblock.config;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class StellarConfig 
 {
-	public static String stellarServer = "http://34.87.0.54/";
+	public static String stellarServer = "https://horizon-testnet.stellar.org";
 }
+
+

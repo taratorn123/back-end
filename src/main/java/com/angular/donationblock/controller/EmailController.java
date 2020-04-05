@@ -1,7 +1,13 @@
 package com.angular.donationblock.controller;
 
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.List;
 
 import javax.mail.Authenticator;
 import javax.mail.Message;
@@ -22,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.view.RedirectView;
 
+import com.angular.donationblock.entity.User;
 import com.angular.donationblock.entity.VerificationToken;
 import com.angular.donationblock.form.UserForm;
 import com.angular.donationblock.repository.UserRepository;
@@ -36,36 +43,90 @@ public class EmailController
 	@Autowired 
 	private UserRepository userRepo;
 	
-	@GetMapping("/activate")
-	public RedirectView activateuser(@RequestParam String token)
+	private void RemoveExpiredToken() throws ParseException
 	{
-		System.out.println("Enter Token");
-		VerificationToken verificationToken = tokenRepo.findByToken(token);
-		System.out.println("found Token");
-		System.out.println("Get user Complete "+verificationToken.getUser().getId()+" "+ verificationToken.getUser().getUsername());
-		verificationToken.getUser().setEnabled(true);
-		System.out.println("Activate Complete");
-		userRepo.save(verificationToken.getUser());
+		Date currentDate = getCurrentDate();
+		List<VerificationToken> allToken = (List<VerificationToken>) tokenRepo.findAll();
+		for(VerificationToken checkToken : allToken)
+		{
+			if(checkToken.getExpiryDate().compareTo(currentDate) < 0)
+			{
+				tokenRepo.delete(checkToken);
+			}
+		}
+	}
+	private Date getCurrentDate() throws ParseException
+	{
+		SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(new Timestamp(cal.getTime().getTime()));
+        String tmp = formatter.format(new Date(cal.getTime().getTime()));
+        /*Get current date*/
+        Date currentDate = formatter.parse(tmp);
+        return currentDate;
+	}
+	/**
+	 * This method use to activate user after user clicking on verification link
+	 * @throws ParseException 
+	 * */
+	@GetMapping("/activate")
+	public RedirectView activateuser(@RequestParam String token) throws ParseException
+	{
 		RedirectView redirectView = new RedirectView();
-	    redirectView.setUrl("http://localhost:4200/sign-in");
+		VerificationToken verificationToken = null;
+		Date currentDate = getCurrentDate();
+		
+		System.out.println("Enter Token");
+		verificationToken = tokenRepo.findByToken(token);
+		if(verificationToken == null)
+		{
+			redirectView.setUrl("http://localhost:4200/sign-in");
+		}
+		if(verificationToken.getExpiryDate().compareTo(currentDate) < 0)
+		{
+			tokenRepo.delete(verificationToken);
+		}
+		else
+		{
+			System.out.println("found Token");
+			System.out.println("Get user Complete "+verificationToken.getUser().getId()+" "+ verificationToken.getUser().getUsername());
+			verificationToken.getUser().setEnabled(true);
+			System.out.println("Activate Complete");
+			userRepo.save(verificationToken.getUser());
+		    tokenRepo.delete(verificationToken);
+		}
+		redirectView.setUrl("http://localhost:4200/sign-in");
 	    return redirectView;
 	}
-	@PostMapping("/sendmail")
-	public void sendMail(@RequestBody UserForm user)
+	/**
+	 * This method use to sending a email verification link to user from the given email
+	 * */
+	@GetMapping("/sendmail/{id}")
+	public void sendMail(@PathVariable long id)
 	{
 		String token = UUID.randomUUID().toString();
+		User user = userRepo.findById(id).get();
+		tokenRepo.findAllById(user.getId());
+
+		System.out.println(tokenRepo.findAllByUserId(id).size());
+		VerificationToken prevToken = tokenRepo.findByUserId(id);
+		if(prevToken != null)
+		{
+			System.out.println("Deleting");
+			tokenRepo.deleteById(prevToken.getId());
+		}
 		System.out.println(user.getUsername());
-		System.out.println(userRepo.findByUsername(user.getUsername()));
-		VerificationToken verificationToken = new VerificationToken(token,userRepo.findByUsername(user.getUsername()));
+		VerificationToken verificationToken = new VerificationToken(token,user);
 		tokenRepo.save(verificationToken);
 		System.out.println(token);
 		System.out.println("Creating email");
+		/* Setting property for Gmail*/
 		Properties mailProperties = new Properties();
 		mailProperties.put("mail.smtp.auth", "true");
 		mailProperties.put("mail.smtp.starttls.enable","true");
 		mailProperties.put("mail.smtp.host","smtp.gmail.com");
 		mailProperties.put("mail.smtp.port","587");
-		
+		/* Current system Gmail*/
 		String myAccountEmail = "stellardonation053@gmail.com";
 		String password = "35e5af785d";
 		
@@ -77,7 +138,7 @@ public class EmailController
 						return new PasswordAuthentication(myAccountEmail,password);
 					}
 				});
-		Message message = prepareMessage(session,myAccountEmail,user.getEmail(),token);
+		Message message = prepareMessage(session,myAccountEmail,user.getEmail(),token,user.getUsername());
 		try 
 		{
 			Transport.send(message);
@@ -89,7 +150,10 @@ public class EmailController
 			e.printStackTrace();
 		}
 	}
-	private Message prepareMessage(Session session,String myAccountEmail,String recepient,String token)
+	/**
+	 * This method use to create a email instance
+	 * */
+	private Message prepareMessage(Session session,String myAccountEmail,String recepient,String token, String username)
 	{
 		Message message = new MimeMessage(session);
 		
@@ -98,7 +162,10 @@ public class EmailController
 			message.setFrom(new InternetAddress(myAccountEmail));
 			message.setRecipient(Message.RecipientType.TO, new InternetAddress(recepient));
 			message.setSubject("test");
-			message.setText("http://localhost:8080/activate?token="+token);
+			message.setText(""
+					+ "ID : " + username+"\n"
+					+ "Please verify your email address by clicking on the below link\n"
+					+ "http://localhost:8080/activate?token="+token);
 			return message;
 		} 
 		catch (MessagingException e) 
