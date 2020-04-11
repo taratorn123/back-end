@@ -90,10 +90,12 @@ public class DatabaseUtil
 		{
 			for(Campaign campaign : allCampaign)
 			{
-				System.out.println("********************************* Campaign name : "+campaign.getCampaignName()+" *********************************" );
+				System.out.println("*************************************************************************************************************************************************\n");
+
+				System.out.println("******************************************************** Campaign name : "+campaign.getCampaignName()+" *********************************************************" );
 				if(campaign.getUser() == null)
 				{
-					System.out.println("********************************************************************************************\n");
+					System.out.println("*************************************************************************************************************************************************\n");
 					continue;
 				}
 				String responseAcc = campaign.getUser().getPublicKey();
@@ -131,18 +133,20 @@ public class DatabaseUtil
 									System.out.println("Public Key");
 									if(donation.getCampaign().getUser().getPublicKey().compareTo(((PaymentOperationResponse) payment).getTo()) == 0)
 									{
+										System.out.println("transactionHash : "+donation.getTransactionHash()+", "+payment.getTransactionHash()+"\n"
+												+"amount :"+decimalConverter(donation.getAmount())+", "+decimalConverter(((PaymentOperationResponse) payment).getAmount())+"\n"
+												+"Donor :"+donation.getUser().getPublicKey()+", "+((PaymentOperationResponse) payment).getFrom()+"\n"
+												+"Receiver :"+donation.getCampaign().getUser().getPublicKey()+", "+((PaymentOperationResponse) payment).getTo());
 										System.out.println("========>> All equal");
+										
 									}
 								}
 							}							
 						}
-						System.out.println("transactionHash : "+donation.getTransactionHash()+", "+payment.getTransactionHash()+"\n"
-								+"amount :"+decimalConverter(donation.getAmount())+", "+decimalConverter(((PaymentOperationResponse) payment).getAmount())+"\n"
-								+"Donor :"+donation.getUser().getPublicKey()+", "+((PaymentOperationResponse) payment).getFrom()+"\n"
-								+"Receiver :"+donation.getCampaign().getUser().getPublicKey()+", "+((PaymentOperationResponse) payment).getTo());
 						
-						if(!(prevHashTransaction == null && prevHashStellar == null))
+						if(prevHashTransaction == null && prevHashStellar == null)
 						{	
+							System.out.println("Hash null");
 							prevHashTransaction = transactionHash(donation.getTransactionHash(),
 									decimalConverter(donation.getAmount()),
 									donation.getUser().getPublicKey(),
@@ -175,7 +179,7 @@ public class DatabaseUtil
 						}
 					}
 				}
-				System.out.println("********************************************************************************************\n");
+				System.out.println("*************************************************************************************************************************************************\n");
 			}
 			if(prevHashTransaction.compareTo(prevHashStellar) == 0)
 			{
@@ -183,8 +187,8 @@ public class DatabaseUtil
 			}	
 			else
 			{
-				restoreDatabase();
 				System.out.println("Database not equal");
+				//restoreDatabase();
 			}
 		}
 		catch (TooManyRequestsException | NoSuchAlgorithmException | IOException e) 

@@ -75,25 +75,27 @@ public class EmailController
 		RedirectView redirectView = new RedirectView();
 		VerificationToken verificationToken = null;
 		Date currentDate = getCurrentDate();
-		
+		User user;
 		System.out.println("Enter Token");
 		verificationToken = tokenRepo.findByToken(token);
-		if(verificationToken == null)
+		if(!(verificationToken == null))
 		{
-			redirectView.setUrl("http://localhost:4200/sign-in");
-		}
-		if(verificationToken.getExpiryDate().compareTo(currentDate) < 0)
-		{
-			tokenRepo.delete(verificationToken);
-		}
-		else
-		{
-			System.out.println("found Token");
-			System.out.println("Get user Complete "+verificationToken.getUser().getId()+" "+ verificationToken.getUser().getUsername());
-			verificationToken.getUser().setEnabled(true);
-			System.out.println("Activate Complete");
-			userRepo.save(verificationToken.getUser());
-		    tokenRepo.delete(verificationToken);
+			if(verificationToken.getExpiryDate().compareTo(currentDate) < 0)
+			{
+				tokenRepo.delete(verificationToken);
+			}
+			else
+			{
+				System.out.println("found Token");
+				System.out.println("Get user Complete "+verificationToken.getUser().getId()+" "+ verificationToken.getUser().getUsername());
+				user = verificationToken.getUser();
+				user.setEnabled(true);
+				System.out.println(verificationToken.getUser().isEnabled());
+				System.out.println("Activate Complete");
+				userRepo.save(user);
+				
+			    tokenRepo.delete(verificationToken);
+			}
 		}
 		redirectView.setUrl("http://localhost:4200/sign-in");
 	    return redirectView;
@@ -161,7 +163,7 @@ public class EmailController
 		{
 			message.setFrom(new InternetAddress(myAccountEmail));
 			message.setRecipient(Message.RecipientType.TO, new InternetAddress(recepient));
-			message.setSubject("test");
+			message.setSubject("Email Verification");
 			message.setText(""
 					+ "ID : " + username+"\n"
 					+ "Please verify your email address by clicking on the below link\n"

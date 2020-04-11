@@ -9,8 +9,21 @@ import com.angular.donationblock.entity.User;
 import com.angular.donationblock.repository.AccountDonationRepository;
 import com.angular.donationblock.repository.CampaignRepository;
 import com.angular.donationblock.repository.UserRepository;
+import com.angular.donationblock.util.GeneratePdfReport;
+
+import com.itextpdf.text.BaseColor;
+import com.itextpdf.text.Chunk;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Font;
+import com.itextpdf.text.FontFactory;
+import com.itextpdf.text.pdf.PdfWriter;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,6 +45,9 @@ import org.stellar.sdk.responses.SubmitTransactionResponse;
 import org.stellar.sdk.responses.operations.OperationResponse;
 import org.stellar.sdk.responses.operations.PaymentOperationResponse;
 
+import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -252,6 +268,7 @@ public class TransactionController
 									transaction.getAmount(),
 									transaction.getCampaign().getUser().getPublicKey(),
 									transaction.getTransactionHash()));
+							System.out.println(transaction.getTimestamp());
 							systemTransaction.remove(transaction);
 							break;
 						}
@@ -270,4 +287,17 @@ public class TransactionController
 		} 
 		return (List<TransactionModel>) transactionHistory;
     }
+    @GetMapping("/getTrasnactionReport/{transactionID}")
+    public ResponseEntity<InputStreamResource> getReport(@PathVariable long transactionID)
+    {
+    	AccountDonation transaction = accountDonationRepository.findById(transactionID).get();
+    	ByteArrayInputStream reading = GeneratePdfReport.test(transaction);
+    	HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "inline; filename=Transaction_Report_"+transactionID+".pdf");
+        return ResponseEntity
+                .ok()
+                .headers(headers)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(new InputStreamResource(reading));
+    }	
 }
