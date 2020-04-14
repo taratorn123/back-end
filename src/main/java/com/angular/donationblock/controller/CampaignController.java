@@ -43,6 +43,8 @@ import java.util.Optional;
 public class CampaignController {
     @Autowired
     private CampaignRepository campaignRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     @GetMapping("/campaigns-list")
     public List<Campaign> getCampaigns() 

@@ -29,11 +29,6 @@ public class VerificationToken extends BaseEntity
     private User user;
     private Date expiryDate;
     
-    public VerificationToken()
-    {
-    	
-    }
-    
     public VerificationToken(String token,User user)
     {
     	this.token = token;

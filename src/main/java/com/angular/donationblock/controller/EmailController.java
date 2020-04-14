@@ -93,7 +93,6 @@ public class EmailController
 				System.out.println(verificationToken.getUser().isEnabled());
 				System.out.println("Activate Complete");
 				userRepo.save(user);
-				
 			    tokenRepo.delete(verificationToken);
 			}
 		}

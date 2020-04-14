@@ -26,6 +26,10 @@ public class Campaign extends BaseEntity
 //    @OneToOne
 //    private Image coverImage;
 
+    public void setUser(User user)
+    {
+    	this.user = user;
+    }
     public User getUser() 
     {
 		return user;

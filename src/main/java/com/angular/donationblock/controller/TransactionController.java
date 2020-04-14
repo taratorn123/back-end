@@ -9,6 +9,7 @@ import com.angular.donationblock.entity.User;
 import com.angular.donationblock.repository.AccountDonationRepository;
 import com.angular.donationblock.repository.CampaignRepository;
 import com.angular.donationblock.repository.UserRepository;
+import com.angular.donationblock.util.AES;
 import com.angular.donationblock.util.GeneratePdfReport;
 
 import com.itextpdf.text.BaseColor;
@@ -19,11 +20,13 @@ import com.itextpdf.text.Font;
 import com.itextpdf.text.FontFactory;
 import com.itextpdf.text.pdf.PdfWriter;
 
+import org.apache.commons.codec.binary.Base32;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -49,8 +52,13 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 
@@ -67,7 +75,8 @@ public class TransactionController
     @Autowired 
     private UserRepository userRepository;
     private Server server = new Server(StellarConfig.stellarServer);
-
+    static Map<String, String> requestParams = new HashMap<>();
+    
     @PostMapping("/sendDonation")
     public int addToStellar(@RequestBody AccountDonationForm accountDonationForm) throws IOException 
     {
@@ -195,7 +204,8 @@ public class TransactionController
 								System.out.println(transaction.getTransactionHash()+"\n"+payment.getTransactionHash());
 								if(transaction.getAnonymousFlag() == true)
 								{
-									transactionHistory.add(new TransactionModel(campaign.getCampaignName(),
+									transactionHistory.add(new TransactionModel(transaction.getId(),
+											campaign.getCampaignName(),
 											transaction.getTimestamp(),
 											user.getPublicKey(),
 											transaction.getAmount(),
@@ -204,7 +214,8 @@ public class TransactionController
 								}
 								else
 								{
-									transactionHistory.add(new TransactionModel(campaign.getCampaignName(),
+									transactionHistory.add(new TransactionModel(transaction.getId(),
+											campaign.getCampaignName(),
 											transaction.getTimestamp(),
 											user.getUsername(),
 											transaction.getAmount(),
@@ -262,7 +273,8 @@ public class TransactionController
 					{
 						if(transaction.getTransactionHash().compareTo(payment.getTransactionHash()) == 0)
 						{
-							transactionHistory.add(new TransactionModel(transaction.getCampaign().getCampaignName(),
+							transactionHistory.add(new TransactionModel(transaction.getId(),
+									transaction.getCampaign().getCampaignName(),
 									transaction.getTimestamp(),
 									user.getPublicKey(),
 									transaction.getAmount(),
@@ -287,17 +299,42 @@ public class TransactionController
 		} 
 		return (List<TransactionModel>) transactionHistory;
     }
-    @GetMapping("/getTrasnactionReport/{transactionID}")
-    public ResponseEntity<InputStreamResource> getReport(@PathVariable long transactionID)
+    
+    @SuppressWarnings("deprecation")
+	@GetMapping("RequestForTransactionReport/{transactionID}")
+    public String getAccesstoTransactionReport(@PathVariable String transactionID) throws UnsupportedEncodingException
     {
-    	AccountDonation transaction = accountDonationRepository.findById(transactionID).get();
-    	ByteArrayInputStream reading = GeneratePdfReport.test(transaction);
-    	HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Disposition", "inline; filename=Transaction_Report_"+transactionID+".pdf");
-        return ResponseEntity
-                .ok()
-                .headers(headers)
-                .contentType(MediaType.APPLICATION_PDF)
-                .body(new InputStreamResource(reading));
+    	Base32 base32 = new Base32();
+    	transactionID = transactionID+";!@#dsFdfgjklcb151981";
+    	String output = base32.encodeAsString(transactionID.getBytes());
+    	System.out.println("TransactionController : Sending encoded url");
+    	return output;
+    }
+    
+    @GetMapping("/getTrasnactionReport/{encoded}")
+    public ResponseEntity<InputStreamResource> getReport(@PathVariable String encoded) throws UnsupportedEncodingException
+    {
+    	try
+    	{
+    		Base32 base32 = new Base32();
+        	String decoded = new String(base32.decode(encoded));
+        	String[] splitter = decoded.split(";");
+        	String realTransactionId = splitter[0];
+        	System.out.println(encoded);
+    		long transactionID = Long.parseLong(realTransactionId);
+    		AccountDonation transaction = accountDonationRepository.findById(transactionID).get();
+        	ByteArrayInputStream reading = GeneratePdfReport.test(transaction);
+        	HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Disposition", "inline; filename=Transaction_Report_"+transactionID+".pdf");
+            return ResponseEntity
+                    .ok()
+                    .headers(headers)
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(new InputStreamResource(reading));
+    	}
+    	catch(Exception e)
+    	{
+    		return null;
+    	}
     }	
 }

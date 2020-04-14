@@ -3,6 +3,7 @@ import java.sql.Timestamp;
 
 public class TransactionModel
 {
+	private long transactionId;
 	private String campaignName;
 	private String campaignPublicKey;
 	private Timestamp publishTime;
@@ -10,17 +11,25 @@ public class TransactionModel
 	private String amount;
 	private String transactionHash;
 	
+	public long getTransactionId() {
+		return transactionId;
+	}
+	public void setTransactionId(long transactionId) {
+		this.transactionId = transactionId;
+	}
 	public TransactionModel()
 	{
 		
 	}
-	public TransactionModel(String campaignName,
+	public TransactionModel(long  transactionId,
+	String campaignName,
 	Timestamp publishTime,
 	String userName,
 	String amount,
 	String campaignPublicKey,
 	String transactionHash)
 	{
+		this.transactionId = transactionId;
 		this.campaignName = campaignName;
 		this.amount = amount;
 		this.transactionHash = transactionHash;
