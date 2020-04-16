@@ -26,10 +26,10 @@ public class Campaign extends BaseEntity
 //    @OneToOne
 //    private Image coverImage;
 
-    public User getUser() 
-    {
-		return user;
-	}
+    public User getUser() { return user; }
+
+    public void setUser(User user) { this.user = user; }
+
     public String getTargetDonation() {
         return targetDonation;
     }
@@ -69,6 +69,7 @@ public class Campaign extends BaseEntity
     public String getCoverImagePath() { return coverImagePath; }
 
     public void setCoverImagePath(String coverImagePath) { this.coverImagePath = coverImagePath; }
+
 
     public Campaign(){}
     // standard constructors / setters / getters / toString

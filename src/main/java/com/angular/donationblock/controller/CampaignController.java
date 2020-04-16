@@ -4,6 +4,8 @@ import com.angular.donationblock.config.StellarConfig;
 import com.angular.donationblock.entity.AccountDonation;
 import com.angular.donationblock.entity.Campaign;
 import com.angular.donationblock.entity.User;
+import com.angular.donationblock.form.CampaignForm;
+import com.angular.donationblock.form.UserForm;
 import com.angular.donationblock.model.TransactionModel;
 import com.angular.donationblock.repository.AccountDonationRepository;
 import com.angular.donationblock.repository.CampaignRepository;
@@ -43,43 +45,56 @@ import java.util.Optional;
 public class CampaignController {
     @Autowired
     private CampaignRepository campaignRepository;
-
+    @Autowired
+    private UserRepository userRepository;
     @GetMapping("/campaigns-list")
     public List<Campaign> getCampaigns() 
     {
-        return (List<Campaign>) campaignRepository.findAll();
+        return campaignRepository.findAll();
+    }
+
+    @PostMapping("/campaignUser")
+    public Integer saveCampaignUser(@RequestBody CampaignForm campaignForm)
+    {
+        User user = userRepository.findById(campaignForm.getUserId()).get();
+        Campaign campaign = campaignRepository.findById(campaignForm.getCampaignId()).get();
+        campaign.setUser(user);
+        campaignRepository.save(campaign);
+
+        return 1;
     }
 
     @PostMapping("/campaigns")
-    public String addCampaign(@RequestParam("myFile") MultipartFile image, @RequestParam Map<String, String> file) throws IOException 
+    public Long addCampaign(@RequestParam("myFile") MultipartFile image, @RequestParam Map<String, String> file) throws IOException
     {
-          Campaign campaign = new Campaign();
-          Campaign campaignTemp = new Campaign();
+        Campaign campaign = new Campaign();
+        Campaign campaignTemp = new Campaign();
 
-          campaign.setTargetDonation(file.get("targetDonation"));
-          campaign.setCampaignName(file.get("campaignName"));
-          campaign.setCategory(file.get("category"));
-          campaign.setFundRaisingAs(file.get("fundRaisingAs"));
-          campaign.setCampaignDetail(file.get("campaignDetail"));
-          campaign.setCoverImagePath(file.get("coverImagePath"));
 
-          campaignTemp = campaignRepository.save(campaign);
-          campaign.setId(campaignTemp.getId());
-          String directoryName = "D:\\GithubJr\\front-end\\src\\assets\\img\\"+campaignTemp.getId()+"\\coverImage\\";
+        campaign.setTargetDonation(file.get("targetDonation"));
+        campaign.setCampaignName(file.get("campaignName"));
+        campaign.setCategory(file.get("category"));
+        campaign.setFundRaisingAs(file.get("fundRaisingAs"));
+        campaign.setCampaignDetail(file.get("campaignDetail"));
+        campaign.setCoverImagePath(file.get("coverImagePath"));
 
-          File directory = new File(directoryName);
-          if (! directory.exists())
-          {
-              directory.mkdirs();
-                // If you require it to make the entire directory path including parents,
-                // use directory.mkdirs(); here instead.
-          }
-          File dest = new File(directoryName+"\\"+image.getOriginalFilename()+"\\");
-          image.transferTo(dest);
-          campaign.setCoverImagePath("../../assets/img/"+campaignTemp.getId()+"/coverImage/"+image.getOriginalFilename());
-          campaignRepository.save(campaign);
+        campaignTemp = campaignRepository.save(campaign); // save null first go get ID generated
+        campaign.setId(campaignTemp.getId());
+        String directoryName = "D:\\GithubJr\\front-end\\src\\assets\\img\\"+campaignTemp.getId()+"\\coverImage\\";
 
-        return "success";
+        File directory = new File(directoryName);
+        if (! directory.exists())
+        {
+            directory.mkdirs();
+            // If you require it to make the entire directory path including parents,
+            // use directory.mkdirs(); here instead.
+        }
+        File dest = new File(directoryName+"\\"+image.getOriginalFilename()+"\\");
+        image.transferTo(dest);
+        campaign.setCoverImagePath("../../assets/img/"+campaignTemp.getId()+"/coverImage/"+image.getOriginalFilename());
+        campaignRepository.save(campaign);
+
+        return campaign.getId();
     }
 
     @GetMapping("/campaigns/{campaignId}")
@@ -90,6 +105,11 @@ public class CampaignController {
         else
             return new Campaign();
     }
-    
+
+    @GetMapping("/userscampaigns/{userId}")
+    public List<Campaign> getUserCampaign(@PathVariable Long userId) {
+        List<Campaign> temp = campaignRepository.findAllByUserId(userId);
+        return temp;
+    }
   
 }

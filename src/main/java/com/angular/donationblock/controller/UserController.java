@@ -1,6 +1,7 @@
 package com.angular.donationblock.controller;
 
 import com.angular.donationblock.config.StellarConfig;
+import com.angular.donationblock.entity.Campaign;
 import com.angular.donationblock.entity.User;
 import com.angular.donationblock.form.UserForm;
 import com.angular.donationblock.repository.UserRepository;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.stellar.sdk.KeyPair;
 import org.stellar.sdk.Server;
 import org.stellar.sdk.requests.ErrorResponse;
@@ -15,11 +17,14 @@ import org.stellar.sdk.responses.AccountResponse;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.validation.BindingResult;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Scanner;
 
 import javax.validation.ValidationException;
@@ -154,4 +159,18 @@ public class UserController
 		}
         return user.getId();
     }
+
+	@GetMapping("/current-user/{username}")
+	public User getUserData(@PathVariable String username) {
+		User temp = userRepository.findByUsername(username);
+		return temp;
+	}
+
+	@PostMapping("/current-user/edit")
+	public long addCampaign(@RequestBody User user) throws IOException
+	{
+		userRepository.save(user);
+		return 1;
+	}
+
 }
