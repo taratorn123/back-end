@@ -36,13 +36,13 @@ import com.angular.donationblock.repository.VerificationTokenRepository;
 
 @RestController
 @CrossOrigin
-public class EmailController 
+public class EmailController
 {
 	@Autowired
 	private VerificationTokenRepository tokenRepo;
-	@Autowired 
+	@Autowired
 	private UserRepository userRepo;
-	
+
 	private void RemoveExpiredToken() throws ParseException
 	{
 		Date currentDate = getCurrentDate();
@@ -67,7 +67,7 @@ public class EmailController
 	}
 	/**
 	 * This method use to activate user after user clicking on verification link
-	 * @throws ParseException 
+	 * @throws ParseException
 	 * */
 	@GetMapping("/activate")
 	public RedirectView activateuser(@RequestParam String token) throws ParseException
@@ -75,7 +75,7 @@ public class EmailController
 		RedirectView redirectView = new RedirectView();
 		VerificationToken verificationToken = null;
 		Date currentDate = getCurrentDate();
-
+		User user;
 		System.out.println("Enter Token");
 		verificationToken = tokenRepo.findByToken(token);
 		if(!(verificationToken == null))
@@ -88,10 +88,12 @@ public class EmailController
 			{
 				System.out.println("found Token");
 				System.out.println("Get user Complete "+verificationToken.getUser().getId()+" "+ verificationToken.getUser().getUsername());
-				verificationToken.getUser().setEnabled(true);
+				user = verificationToken.getUser();
+				user.setEnabled(true);
+				System.out.println(verificationToken.getUser().isEnabled());
 				System.out.println("Activate Complete");
-				userRepo.save(verificationToken.getUser());
-				tokenRepo.delete(verificationToken);
+				userRepo.save(user);
+			    tokenRepo.delete(verificationToken);
 			}
 		}
 		redirectView.setUrl("http://localhost:4200/sign-in");
@@ -128,7 +130,7 @@ public class EmailController
 		/* Current system Gmail*/
 		String myAccountEmail = "stellardonation053@gmail.com";
 		String password = "35e5af785d";
-		
+
 		Session session = Session.getInstance(mailProperties, new Authenticator()
 				{
 					@Override
@@ -138,11 +140,11 @@ public class EmailController
 					}
 				});
 		Message message = prepareMessage(session,myAccountEmail,user.getEmail(),token,user.getUsername());
-		try 
+		try
 		{
 			Transport.send(message);
 			System.out.println("Message send");
-		} 
+		}
 		catch (MessagingException e)
 		{
 			// TODO Auto-generated catch block
@@ -155,19 +157,19 @@ public class EmailController
 	private Message prepareMessage(Session session,String myAccountEmail,String recepient,String token, String username)
 	{
 		Message message = new MimeMessage(session);
-		
-		try 
+
+		try
 		{
 			message.setFrom(new InternetAddress(myAccountEmail));
 			message.setRecipient(Message.RecipientType.TO, new InternetAddress(recepient));
-			message.setSubject("test");
+			message.setSubject("Email Verification");
 			message.setText(""
 					+ "ID : " + username+"\n"
 					+ "Please verify your email address by clicking on the below link\n"
 					+ "http://localhost:8080/activate?token="+token);
 			return message;
-		} 
-		catch (MessagingException e) 
+		}
+		catch (MessagingException e)
 		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();

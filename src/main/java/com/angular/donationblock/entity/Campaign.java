@@ -9,7 +9,7 @@ import javax.persistence.*;
 @Entity
 @Getter
 @Setter
-public class Campaign extends BaseEntity 
+public class Campaign extends BaseEntity
 {
 	@ManyToOne(cascade = CascadeType.MERGE)
 	private User user;
@@ -18,7 +18,7 @@ public class Campaign extends BaseEntity
     private String campaignName;
     private String category;
     private String fundRaisingAs;
-    
+
     @Lob
     private String campaignDetail;
     private String coverImagePath;
@@ -26,10 +26,14 @@ public class Campaign extends BaseEntity
 //    @OneToOne
 //    private Image coverImage;
 
-    public User getUser() { return user; }
-
-    public void setUser(User user) { this.user = user; }
-
+    public void setUser(User user)
+    {
+    	this.user = user;
+    }
+    public User getUser()
+    {
+			return user;
+		}
     public String getTargetDonation() {
         return targetDonation;
     }

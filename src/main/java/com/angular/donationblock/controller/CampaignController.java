@@ -47,8 +47,9 @@ public class CampaignController {
     private CampaignRepository campaignRepository;
     @Autowired
     private UserRepository userRepository;
+
     @GetMapping("/campaigns-list")
-    public List<Campaign> getCampaigns() 
+    public List<Campaign> getCampaigns()
     {
         return campaignRepository.findAll();
     }
@@ -98,7 +99,8 @@ public class CampaignController {
     }
 
     @GetMapping("/campaigns/{campaignId}")
-    public Campaign getCampaignData(@PathVariable Long campaignId){
+    public Campaign getCampaignData(@PathVariable Long campaignId)
+    {
         Optional<Campaign> temp = campaignRepository.findById(campaignId);
         if(temp.isPresent())
             return campaignRepository.findById(campaignId).get();
@@ -111,5 +113,5 @@ public class CampaignController {
         List<Campaign> temp = campaignRepository.findAllByUserId(userId);
         return temp;
     }
-  
+
 }
