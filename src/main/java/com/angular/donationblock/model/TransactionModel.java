@@ -37,10 +37,17 @@ public class TransactionModel
 		this.publishTime = publishTime;
 		this.userName = userName;
 	}
+	public TransactionModel(String campaignName,
+			String campaignPublicKey)
+	{
+		this.campaignName = campaignName;
+		this.campaignPublicKey = campaignPublicKey;
+	}
 	public String getCampaignName() 
 	{
 		return campaignName;
 	}
+
 	public String getCampaignPublicKey() 
 	{
 		return campaignPublicKey;
