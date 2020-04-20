@@ -10,6 +10,7 @@ import com.angular.donationblock.repository.AccountDonationRepository;
 import com.angular.donationblock.repository.CampaignRepository;
 import com.angular.donationblock.repository.UserRepository;
 import com.angular.donationblock.util.AES;
+import com.angular.donationblock.util.DatabaseUtil;
 import com.angular.donationblock.util.GeneratePdfReport;
 
 import com.itextpdf.text.BaseColor;
@@ -81,23 +82,24 @@ public class TransactionController
     public int addToStellar(@RequestBody AccountDonationForm accountDonationForm) throws IOException 
     {
     	Transaction transaction;
+    	KeyPair sourceKey;
+    	SubmitTransactionResponse response = null;
+    	String hash = null;
     	System.out.println(accountDonationForm.getAmount());
     	System.out.println(accountDonationForm.getCampaignId());
     	System.out.println(accountDonationForm.getUserId());
     	AccountDonation accountDonation = new AccountDonation(
     			userRepository.findByUsername(accountDonationForm.getUserId()),
     			campaignRepository.findById(Long.parseLong(accountDonationForm.getCampaignId())).get(),
-    			accountDonationForm.getAmount(),accountDonationForm.getComment(),accountDonationForm.getAnonymousFlag());
+    			DatabaseUtil.decimalConverter(accountDonationForm.getAmount()),accountDonationForm.getComment(),accountDonationForm.getAnonymousFlag());
     	AccountResponse account = server.accounts().account(accountDonation.getUser().getPublicKey());
 		System.out.println("Hello "+ account.getAccountId());
 		System.out.println("Balances for account " + account.getAccountId());
 		/* Check if user have enough balance to donate money, if not return 0*/
 		for (AccountResponse.Balance balance : account.getBalances()) 
 		{
-			System.out.println("Im here 1");
 			if(balance.getAssetType().compareTo("native")==0)
 			{
-				System.out.println("Im here 2");
 				if(Double.parseDouble(balance.getBalance())-1 < Double.parseDouble(accountDonation.getAmount()))
 				{
 					System.out.println("Cannot do transaction");
@@ -107,7 +109,14 @@ public class TransactionController
 		}
 		
 		System.out.println("Get Private key");
-    	KeyPair sourceKey = KeyPair.fromSecretSeed(accountDonationForm.getPrivateKey());
+    	try
+    	{
+    		sourceKey = KeyPair.fromSecretSeed(accountDonationForm.getPrivateKey());
+    	}
+    	catch(Exception e)
+    	{
+    		return 1;
+    	}
     	System.out.println("Building Transaction");
     	if(accountDonationForm.getComment() == null)
     	{
@@ -139,19 +148,26 @@ public class TransactionController
     	try 
 		{
 			System.out.println("Get response from serve");
-			SubmitTransactionResponse response = server.submitTransaction(transaction);
-			System.out.println("Get Hash");
-			String hash = response.getHash();
-			if(!response.isSuccess())
+			for(int i = 0;i < 10;i++)
 			{
-				return 1;
+				response = server.submitTransaction(transaction);
+				if(response.isSuccess())
+				{
+					break;
+				}
+				if(i == 9)
+				{
+					return 2;
+				}
 			}
 			/* If transaction failed DecodedTransactionResult will return option.abest() instead of json*/
+			System.out.println("Get Hash");
+			hash = response.getHash();
 			System.out.println(response.getDecodedTransactionResult());
 			accountDonation.setTransactionHash(hash);
 			this.saveTransaction(accountDonation);
 			System.out.println("Save database");
-			return 2;
+			return 3;
 		} 
 		catch (Exception e) 
 		{
@@ -161,7 +177,7 @@ public class TransactionController
 			// already built transaction:
 			// SubmitTransactionResponse response = server.submitTransaction(transaction);
 		}
-        return 3;
+		return 3;
     }
     private void saveTransaction(AccountDonation accountDonation)
     {
@@ -175,13 +191,14 @@ public class TransactionController
     @GetMapping("/getHistoryTransactionCampaign/{campaignId}")
     public List<TransactionModel> getHistoryTransactionCampaign(@PathVariable Long campaignId)
     {
+    	Campaign campaign = campaignRepository.findById(campaignId).get();
     	List<TransactionModel> transactionHistory = new ArrayList<TransactionModel>();
     	List<AccountDonation> systemTransaction = accountDonationRepository.findAllByCampaignId(campaignId);
     	if(systemTransaction.isEmpty())
     	{
-    		return null;
+    		transactionHistory.add(new TransactionModel(campaign.getCampaignName(),campaign.getUser().getPublicKey()));
+    		return transactionHistory;
     	}
-    	Campaign campaign = campaignRepository.findById(campaignId).get();
     	System.out.println("Get history Transaction");
     	Server server = new Server(StellarConfig.stellarServer);
     	String responseAcc = campaign.getUser().getPublicKey();
@@ -257,7 +274,8 @@ public class TransactionController
     	List<AccountDonation> systemTransaction = accountDonationRepository.findAllByUserId(userId);
     	if(systemTransaction.isEmpty())
     	{
-    		return null;
+    		transactionHistory.add(new TransactionModel(user.getFirstName()+" "+user.getLastName(),user.getPublicKey()));
+    		return transactionHistory;
     	}
     	Server server = new Server(StellarConfig.stellarServer);
     	String responseAcc = user.getPublicKey();
@@ -276,9 +294,9 @@ public class TransactionController
 							transactionHistory.add(new TransactionModel(transaction.getId(),
 									transaction.getCampaign().getCampaignName(),
 									transaction.getTimestamp(),
-									user.getPublicKey(),
+									user.getFirstName()+" "+user.getLastName(),
 									transaction.getAmount(),
-									transaction.getCampaign().getUser().getPublicKey(),
+									user.getPublicKey(),
 									transaction.getTransactionHash()));
 							System.out.println(transaction.getTimestamp());
 							systemTransaction.remove(transaction);

@@ -71,7 +71,7 @@ public class DatabaseUtil
   
         return hexString.toString();  
     } 
-	private String decimalConverter(String number)
+	public static String decimalConverter(String number)
 	{
 		String output = number;
 		double tmp = Double.parseDouble(number);
@@ -249,120 +249,6 @@ public class DatabaseUtil
 			campaignTransaction.setTransactionHash(payment.getTransactionHash());
 		}
 		accountDonationRepo.save(campaignTransaction);
-		
-	}
-	private void restoreDatabase()
-	{
-		List<AccountDonation> campaignTransaction;
-		List<Campaign> allCampaign = campaignRepo.findAll();
-		String prevHashTransaction = null;
-		String prevHashStellar = null;
-		Server server = new Server(StellarConfig.stellarServer);
-		try
-		{
-			for(Campaign campaign : allCampaign)
-			{
-				System.out.println("********************************* Campaign name : "+campaign.getCampaignName()+" *********************************" );
-				if(campaign.getUser() == null)
-				{
-					System.out.println("********************************************************************************************\n");
-					continue;
-				}
-				String responseAcc = campaign.getUser().getPublicKey();
-				campaignTransaction = accountDonationRepo.findAllByCampaignId(campaign.getId());
-				PaymentsRequestBuilder request = server.payments().forAccount(responseAcc);
-				ArrayList<OperationResponse> paymentsRequest = new ArrayList<OperationResponse>();
-				for(OperationResponse payment : request.execute().getRecords())
-				{
-					if(payment instanceof PaymentOperationResponse)
-					{
-						paymentsRequest.add(payment);
-					}
-				}
-				if(campaignTransaction.size() != paymentsRequest.size())
-				{
-					System.out.println("Campaign Transaction : "+campaignTransaction.size()+" Stellar Transaction : "+paymentsRequest.size());
-					System.out.println("Unequal");
-					
-				}
-				if(!campaignTransaction.isEmpty())
-				{
-					for(int i = 0;i < paymentsRequest.size();i++)
-					{
-						
-						OperationResponse payment = paymentsRequest.get(i);
-						System.out.println("========>> Comparison Checking <<========");
-						if(campaignTransaction.get(i).getTransactionHash().compareTo(payment.getTransactionHash()) == 0)
-						{
-							System.out.println("Transaction Hash");
-							if(decimalConverter(campaignTransaction.get(i).getAmount()).compareTo(decimalConverter(((PaymentOperationResponse) payment).getAmount())) == 0)
-							{
-								System.out.println("Amount");
-								if(campaignTransaction.get(i).getUser().getPublicKey().compareTo(((PaymentOperationResponse) payment).getFrom()) == 0)
-								{
-									System.out.println("Public Key");
-									if(campaignTransaction.get(i).getCampaign().getUser().getPublicKey().compareTo(((PaymentOperationResponse) payment).getTo()) == 0)
-									{
-										System.out.println("========>> All equal");
-									}
-								}
-							}
-						}
-						System.out.println("transactionHash : "+campaignTransaction.get(i).getTransactionHash()+", "+payment.getTransactionHash()+"\n"
-								+"amount :"+decimalConverter(campaignTransaction.get(i).getAmount())+", "+decimalConverter(((PaymentOperationResponse) payment).getAmount())+"\n"
-								+"Donor :"+campaignTransaction.get(i).getUser().getPublicKey()+", "+((PaymentOperationResponse) payment).getFrom()+"\n"
-								+"Receiver :"+campaignTransaction.get(i).getCampaign().getUser().getPublicKey()+", "+((PaymentOperationResponse) payment).getTo());
-						
-						if(!(prevHashTransaction == null && prevHashStellar == null))
-						{	
-							prevHashTransaction = transactionHash(campaignTransaction.get(i).getTransactionHash(),
-									decimalConverter(campaignTransaction.get(i).getAmount()),
-									campaignTransaction.get(i).getUser().getPublicKey(),
-									campaignTransaction.get(i).getCampaign().getUser().getPublicKey(),
-									null);
-							prevHashStellar = transactionHash(payment.getTransactionHash(),
-									decimalConverter(((PaymentOperationResponse) payment).getAmount()),
-									((PaymentOperationResponse) payment).getFrom(),
-									((PaymentOperationResponse) payment).getTo(),
-									null);
-						}
-						else
-						{
-							prevHashTransaction = transactionHash(campaignTransaction.get(i).getTransactionHash(),
-									decimalConverter(campaignTransaction.get(i).getAmount()),
-									campaignTransaction.get(i).getUser().getPublicKey(),
-									campaignTransaction.get(i).getCampaign().getUser().getPublicKey(),
-									prevHashTransaction);
-							prevHashStellar = transactionHash(payment.getTransactionHash(),
-									decimalConverter(((PaymentOperationResponse) payment).getAmount()),
-									((PaymentOperationResponse) payment).getFrom(),
-									((PaymentOperationResponse) payment).getTo(),
-									prevHashStellar);
-						}
-						System.out.println("System "+prevHashTransaction+" Stellar "+prevHashStellar);
-					}
-				}
-				System.out.println("********************************************************************************************\n");
-			}
-			if(prevHashTransaction.compareTo(prevHashStellar) == 0)
-			{
-				System.out.println("Database equal");
-			}	
-			else
-			{
-				restoreDatabase();
-				System.out.println("Database not equal");
-			}
-		}
-		catch (TooManyRequestsException | NoSuchAlgorithmException | IOException e) 
-		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 
-		catch(ErrorResponse e1)
-		{
-			System.out.println(e1.getBody());
-		}
 		
 	}
 }
