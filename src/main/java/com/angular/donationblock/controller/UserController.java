@@ -93,7 +93,27 @@ public class UserController
     	return 1;
     }
     
-    
+    /**
+     * This method use to check user existence
+     * */
+    @PostMapping("/checkUser")
+    public int checkUser(@RequestBody UserForm userForm)
+    {
+    	User user = userRepository.findByUsername(userForm.getUsername());
+    	if(user != null)
+    	{
+    		return 0;
+    	}
+    	else
+    	{
+    		user = userRepository.findByEmail(userForm.getEmail());
+    		if(user != null)
+    		{
+    			return 1;
+    		}
+    	}
+    	return 2;
+    }
     /**
      * This method use to received userForm from frontend and send it to Stellar network
      * then save result into database
@@ -102,13 +122,8 @@ public class UserController
     @PostMapping("/users")
     public long addUser(@RequestBody UserForm userForm) throws MalformedURLException, IOException 
     {
-    	User user;
+    	User user = null;
     	server = new Server(StellarConfig.stellarServer);
-    	User userRepo = userRepository.findByUsername(userForm.getUsername());
-    	if(userRepo != null)
-    	{
-    		return 0;
-    	}
     	System.out.println("This is user username   "+userForm.getUsername());
     	KeyPair pair = KeyPair.random();
 		System.out.println(new String(pair.getSecretSeed()));
@@ -119,7 +134,7 @@ public class UserController
 		scanner = new Scanner(response, "UTF-8");
 		String body = scanner.useDelimiter("\\A").next();
 		System.out.println("SUCCESS! You have a new account :)\n" + body);
-		while(true)
+		for(int i = 0; i < 10;i++)
 		{
 			try
 			{
@@ -138,7 +153,7 @@ public class UserController
 		        {
 		        	user = new User(userForm.getFirstName(),userForm.getLastName(),userForm.getEmail(),
 		        			userForm.getUsername(),passwordEncoder.encode(userForm.getPassword()),
-		        			pair.getAccountId(),userForm.getRouteSignatureImage(),userForm.getRouteImageVerification());
+		        			pair.getAccountId(),userForm.isVerificationFlag());
 		        	userRepository.save(user);
 		        	System.out.println("Saving database with image path");
 		        }
@@ -150,10 +165,14 @@ public class UserController
 		        	userRepository.save(user);
 		        	System.out.println("Saving database");
 		        }
-		        break;
+		        return user.getId();
 			}
 			catch(ErrorResponse e)
 			{
+				if(i == 9)
+				{
+					return 0;
+				}
 				System.out.println(e.getBody());
 			}
 		}
@@ -171,6 +190,38 @@ public class UserController
 	{
 		userRepository.save(user);
 		return 1;
+	}
+	@PostMapping("/userImageVerification")
+	public boolean userImageVerification(@RequestParam("verification") MultipartFile verification,
+			@RequestParam("signature") MultipartFile signature,
+			@RequestParam Map<String, String> file)
+	{
+		User user = userRepository.findById(Long.parseLong(file.get("userId"))).get();
+        String directoryName = "D:\\GithubJr\\front-end\\src\\assets\\img\\"+user.getId()+"\\verification\\";
+        File directory = new File(directoryName);
+        if (! directory.exists())
+        {
+            directory.mkdirs();
+            // If you require it to make the entire directory path including parents,
+            // use directory.mkdirs(); here instead.
+        }
+        File verificationDest = new File(directoryName+"\\verification.jpg\\");
+        File signatureDest = new File(directoryName+"\\signature.jpg\\");
+        try 
+        {
+			verification.transferTo(verificationDest);
+			signature.transferTo(signatureDest);
+		} 
+        catch (IllegalStateException | IOException e) 
+        {
+			e.printStackTrace();
+			userRepository.delete(user);
+			return false;
+		}
+		user.setRouteImageVerification("../../assets/img/"+user.getId()+"/verification/verification.jpg");
+		user.setRouteSignatureImage("../../assets/img/"+user.getId()+"/verification/signature.jpg");
+		userRepository.save(user);
+		return true;
 	}
 
 }

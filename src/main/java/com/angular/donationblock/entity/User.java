@@ -17,7 +17,6 @@ public class User extends BaseEntity
     private String email;
     private boolean verificationFlag;
     private int privilegeLevel;
-    @Column(updatable=false)
     private String publicKey;
     private String routeSignatureImage;
     private String routeImageVerification;
@@ -43,19 +42,18 @@ public class User extends BaseEntity
     		String username,
     		String password,
     		String publicKey,
-    		String routeSignatureImage,
-    		String routeImageVerification)
+    		boolean verificationFlag)
     {
     	this.firstName = firstName;
     	this.lastName = lastName;
     	this.email = email;
     	this.username = username;
     	this.password = password;
-    	this.verificationFlag = true;
+    	this.verificationFlag = verificationFlag;
     	this.privilegeLevel = 0;
     	this.publicKey = publicKey;
-    	this.routeSignatureImage = routeSignatureImage;
-    	this.routeImageVerification = routeImageVerification;
+    	this.routeSignatureImage = "";
+    	this.routeImageVerification = "";
     }
     public User(String firstName,
     		String lastName,

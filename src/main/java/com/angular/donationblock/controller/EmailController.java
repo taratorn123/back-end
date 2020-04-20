@@ -90,6 +90,7 @@ public class EmailController
 				System.out.println("Get user Complete "+verificationToken.getUser().getId()+" "+ verificationToken.getUser().getUsername());
 				user = verificationToken.getUser();
 				user.setEnabled(true);
+				user.setPrivilegeLevel(1);
 				System.out.println(verificationToken.getUser().isEnabled());
 				System.out.println("Activate Complete");
 				userRepo.save(user);
