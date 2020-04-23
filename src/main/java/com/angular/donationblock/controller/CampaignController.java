@@ -69,42 +69,16 @@ public class CampaignController {
     {
         User user = userRepository.findById(campaignForm.getUserId()).get();
         Campaign campaign = campaignRepository.findById(campaignForm.getCampaignId()).get();
+        campaign.setCoverImagePath(campaignForm.getCoverImagePath());
         campaign.setUser(user);
         campaignRepository.save(campaign);
-
         return 1;
     }
 
     @PostMapping("/campaigns")
-    public Long addCampaign(@RequestParam("myFile") MultipartFile image, @RequestParam Map<String, String> file) throws IOException
+    public Long addCampaign(@RequestBody Campaign campaignForm)
     {
-        Campaign campaign = new Campaign();
-        Campaign campaignTemp = new Campaign();
-
-
-        campaign.setTargetDonation(file.get("targetDonation"));
-        campaign.setCampaignName(file.get("campaignName"));
-        campaign.setCategory(file.get("category"));
-        campaign.setFundRaisingAs(file.get("fundRaisingAs"));
-        campaign.setCampaignDetail(file.get("campaignDetail"));
-        campaign.setCoverImagePath(file.get("coverImagePath"));
-        campaign.setActive(true);
-        campaignTemp = campaignRepository.save(campaign); // save null first go get ID generated
-        campaign.setId(campaignTemp.getId());
-        String directoryName = "D:\\GithubJr\\front-end\\src\\assets\\img\\"+campaignTemp.getId()+"\\coverImage\\";
-
-        File directory = new File(directoryName);
-        if (! directory.exists())
-        {
-            directory.mkdirs();
-            // If you require it to make the entire directory path including parents,
-            // use directory.mkdirs(); here instead.
-        }
-        File dest = new File(directoryName+"\\"+image.getOriginalFilename()+"\\");
-        image.transferTo(dest);
-        campaign.setCoverImagePath("../../assets/img/"+campaignTemp.getId()+"/coverImage/"+image.getOriginalFilename());
-        campaignRepository.save(campaign);
-
+        Campaign campaign = campaignRepository.save(campaignForm);
         return campaign.getId();
     }
 
