@@ -4,6 +4,7 @@ public class CampaignForm
 {
     private Long campaignId;
     private Long userId;
+    private String coverImagePath;
 
     public Long getCampaignId() {
         return campaignId;
@@ -19,5 +20,13 @@ public class CampaignForm
 
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public String getCoverImagePath() {
+        return coverImagePath;
+    }
+
+    public void setCoverImagePath(String coverImagePath) {
+        this.coverImagePath = coverImagePath;
     }
 }
