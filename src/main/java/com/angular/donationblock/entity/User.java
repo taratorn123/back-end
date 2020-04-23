@@ -21,10 +21,19 @@ public class User extends BaseEntity
     private String routeSignatureImage;
     private String routeImageVerification;
     private boolean enabled = false;
-    
+    private boolean active = false;
+
     public User()
     {
     	
+    }
+    public boolean isActive()
+    {
+    	return this.active;
+    }
+    public void setActive(Boolean active)
+    {
+    	this.active = active;
     }
     public boolean isEnabled() 
     {

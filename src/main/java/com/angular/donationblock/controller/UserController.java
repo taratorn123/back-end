@@ -114,6 +114,14 @@ public class UserController
     	}
     	return 2;
     }
+    @PostMapping("/checkPrivilege")
+    public int checkPrivilege(@RequestBody long userId)
+    {
+    	
+    	User user = userRepository.findById(userId).get();
+		return user.getPrivilegeLevel();
+    }
+    
     /**
      * This method use to received userForm from frontend and send it to Stellar network
      * then save result into database
@@ -222,6 +230,14 @@ public class UserController
 		user.setRouteSignatureImage("../../assets/img/"+user.getId()+"/verification/signature.jpg");
 		userRepository.save(user);
 		return true;
+	}
+	
+	@GetMapping("/getverificationrequest")
+	public List<User> getVerificationRequest()
+	{
+		List<User> users = userRepository.findAllByVerificationFlag(true);
+		return users;
+		
 	}
 
 }

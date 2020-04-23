@@ -3,12 +3,15 @@ package com.angular.donationblock.controller;
 import com.angular.donationblock.config.StellarConfig;
 import com.angular.donationblock.entity.AccountDonation;
 import com.angular.donationblock.entity.Campaign;
+import com.angular.donationblock.entity.Report;
 import com.angular.donationblock.entity.User;
 import com.angular.donationblock.form.CampaignForm;
+import com.angular.donationblock.form.ReportForm;
 import com.angular.donationblock.form.UserForm;
 import com.angular.donationblock.model.TransactionModel;
 import com.angular.donationblock.repository.AccountDonationRepository;
 import com.angular.donationblock.repository.CampaignRepository;
+import com.angular.donationblock.repository.ReportRepository;
 import com.angular.donationblock.repository.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,16 +44,23 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin
 public class CampaignController {
     @Autowired
     private CampaignRepository campaignRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired 
+    private ReportRepository reportRepository;
 
     @GetMapping("/campaigns-list")
     public List<Campaign> getCampaigns()
     {
+    	List<Campaign> output = new ArrayList<Campaign>();
+    	for(Campaign campaign : campaignRepository.findAll())
+    	{
+    		
+    	}
         return campaignRepository.findAll();
     }
 
@@ -78,7 +88,7 @@ public class CampaignController {
         campaign.setFundRaisingAs(file.get("fundRaisingAs"));
         campaign.setCampaignDetail(file.get("campaignDetail"));
         campaign.setCoverImagePath(file.get("coverImagePath"));
-
+        campaign.setActive(true);
         campaignTemp = campaignRepository.save(campaign); // save null first go get ID generated
         campaign.setId(campaignTemp.getId());
         String directoryName = "D:\\GithubJr\\front-end\\src\\assets\\img\\"+campaignTemp.getId()+"\\coverImage\\";
@@ -109,9 +119,40 @@ public class CampaignController {
     }
 
     @GetMapping("/userscampaigns/{userId}")
-    public List<Campaign> getUserCampaign(@PathVariable Long userId) {
+    public List<Campaign> getUserCampaign(@PathVariable Long userId) 
+    {
         List<Campaign> temp = campaignRepository.findAllByUserId(userId);
         return temp;
+    }
+    
+    @PostMapping("/inactivateCampaign")
+    public boolean inactivateCampaign(@RequestBody String campaignId)
+    {
+    	Campaign campaign = campaignRepository.findById(Long.parseLong(campaignId)).get();
+    	campaign.setActive(false);
+    	campaignRepository.save(campaign);
+    	for(Report report: reportRepository.findAllByCampaignId(campaign.getId()))
+    	{
+    		report.setDeleted(true);
+    		reportRepository.save(report);
+    	}
+    	
+    	System.out.println("Inactivated");
+    	return true;
+    }
+    @GetMapping("/getInactiveCampaign")
+    public List<Campaign> getInactiveCampaign()
+    {
+    	return campaignRepository.findAllByActive(false);
+    }
+    @PostMapping("/activeCampaign")
+    public boolean activateCampaign(@RequestBody String campaignId)
+    {
+    	Campaign campaign = campaignRepository.findById(Long.parseLong(campaignId)).get();
+    	campaign.setActive(true);
+    	campaignRepository.save(campaign);
+    	System.out.println("Campaign "+campaign.getId()+" "+campaign.getCampaignName()+" Activated");
+    	return true;
     }
 
 }

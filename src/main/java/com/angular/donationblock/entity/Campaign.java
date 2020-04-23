@@ -22,9 +22,9 @@ public class Campaign extends BaseEntity
     @Lob
     private String campaignDetail;
     private String coverImagePath;
-
-//    @OneToOne
-//    private Image coverImage;
+    private boolean active;
+    
+    
 
     public void setUser(User user)
     {
@@ -33,7 +33,15 @@ public class Campaign extends BaseEntity
     public User getUser()
     {
 			return user;
-		}
+	}
+    public boolean isActive()
+    {
+    	return this.active;
+    }
+    public void setActive(Boolean active)
+    {
+    	this.active = active;
+    }
     public String getTargetDonation() {
         return targetDonation;
     }
