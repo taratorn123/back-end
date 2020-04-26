@@ -80,4 +80,7 @@ public class AccountDonation extends BaseEntity
 		return "ID : "+this.getId()+" From "+this.getUser().getUsername()+
 				" To "+this.getCampaign().getCampaignName()+" Amount "+this.getAmount();
 	}
+//	public Date TimestampToDateExample (){
+//    	return Date date=new Date(this.getTimestamp().getTime());
+//	}
 }

@@ -6,6 +6,7 @@ import com.angular.donationblock.entity.Campaign;
 import com.angular.donationblock.entity.CampaignUpdate;
 import com.angular.donationblock.entity.Report;
 import com.angular.donationblock.entity.User;
+import com.angular.donationblock.entity.AccountDonation;
 import com.angular.donationblock.form.CampaignForm;
 import com.angular.donationblock.form.CampaignUpdateForm;
 import com.angular.donationblock.form.ReportForm;
@@ -16,7 +17,7 @@ import com.angular.donationblock.repository.CampaignRepository;
 import com.angular.donationblock.repository.CampaignUpdateRepository;
 import com.angular.donationblock.repository.ReportRepository;
 import com.angular.donationblock.repository.UserRepository;
-
+import com.angular.donationblock.repository.AccountDonationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -57,6 +58,8 @@ public class CampaignController {
     private UserRepository userRepository;
     @Autowired 
     private ReportRepository reportRepository;
+    @Autowired
+    private AccountDonationRepository accountDonationRepository;
 
     @GetMapping("/campaigns-list")
     public List<Campaign> getCampaigns()
@@ -68,7 +71,7 @@ public class CampaignController {
     	}
         return campaignRepository.findAll();
     }
-
+    //Save both campaign and owner of the campaign to map together
     @PostMapping("/campaignUser")
     public Integer saveCampaignUser(@RequestBody CampaignForm campaignForm)
     {
@@ -112,6 +115,7 @@ public class CampaignController {
         campaignUpdateRepository.save(campaignUpdate);
         return 1;
     }
+
     @GetMapping("/campaigns/{campaignId}")
     public Campaign getCampaignData(@PathVariable Long campaignId)
     {
@@ -132,6 +136,13 @@ public class CampaignController {
     public List<CampaignUpdate> getUpdateCampaigns(@PathVariable Long campaignId)
     {
         List<CampaignUpdate> temp = campaignUpdateRepository.findAllByCampaignId(campaignId);
+        return temp;
+    }
+    @GetMapping("/getCommentCampaigns/{campaignId}")
+    public List<AccountDonation> getCommentCampaigns(@PathVariable Long campaignId)
+    {
+        List<AccountDonation> temp = accountDonationRepository.findAllByCampaignId(campaignId);
+
         return temp;
     }
     @PostMapping("/inactivateCampaign")

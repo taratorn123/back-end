@@ -5,6 +5,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import javax.persistence.*;
+import java.util.Date;
 
 @Entity
 @Getter
@@ -18,7 +19,7 @@ public class Campaign extends BaseEntity
     private String campaignName;
     private String category;
     private String fundRaisingAs;
-
+    private Date startDate;
     @Lob
     private String campaignDetail;
     private String coverImagePath;
@@ -28,19 +29,19 @@ public class Campaign extends BaseEntity
 
     public void setUser(User user)
     {
-    	this.user = user;
+        this.user = user;
     }
     public User getUser()
     {
-			return user;
+        return user;
 	}
     public boolean isActive()
     {
-    	return this.active;
+        return this.active;
     }
     public void setActive(Boolean active)
     {
-    	this.active = active;
+        this.active = active;
     }
     public String getTargetDonation() {
         return targetDonation;
@@ -74,13 +75,29 @@ public class Campaign extends BaseEntity
         this.fundRaisingAs = fundRaisingAs;
     }
 
-    public String getCampaignDetail() { return campaignDetail; }
+    public Date getStartDate() {
+        return startDate;
+    }
 
-    public void setCampaignDetail(String campaignDetail) { this.campaignDetail = campaignDetail; }
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
 
-    public String getCoverImagePath() { return coverImagePath; }
+    public String getCampaignDetail() {
+        return campaignDetail;
+    }
 
-    public void setCoverImagePath(String coverImagePath) { this.coverImagePath = coverImagePath; }
+    public void setCampaignDetail(String campaignDetail) {
+        this.campaignDetail = campaignDetail;
+    }
+
+    public String getCoverImagePath() {
+        return coverImagePath;
+    }
+
+    public void setCoverImagePath(String coverImagePath) {
+        this.coverImagePath = coverImagePath;
+    }
 
 
     public Campaign(){}
