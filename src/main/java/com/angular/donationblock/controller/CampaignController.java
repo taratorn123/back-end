@@ -3,14 +3,17 @@ package com.angular.donationblock.controller;
 import com.angular.donationblock.config.StellarConfig;
 import com.angular.donationblock.entity.AccountDonation;
 import com.angular.donationblock.entity.Campaign;
+import com.angular.donationblock.entity.CampaignUpdate;
 import com.angular.donationblock.entity.Report;
 import com.angular.donationblock.entity.User;
 import com.angular.donationblock.form.CampaignForm;
+import com.angular.donationblock.form.CampaignUpdateForm;
 import com.angular.donationblock.form.ReportForm;
 import com.angular.donationblock.form.UserForm;
 import com.angular.donationblock.model.TransactionModel;
 import com.angular.donationblock.repository.AccountDonationRepository;
 import com.angular.donationblock.repository.CampaignRepository;
+import com.angular.donationblock.repository.CampaignUpdateRepository;
 import com.angular.donationblock.repository.ReportRepository;
 import com.angular.donationblock.repository.UserRepository;
 
@@ -49,6 +52,8 @@ public class CampaignController {
     @Autowired
     private CampaignRepository campaignRepository;
     @Autowired
+    private CampaignUpdateRepository campaignUpdateRepository;
+    @Autowired
     private UserRepository userRepository;
     @Autowired 
     private ReportRepository reportRepository;
@@ -82,6 +87,31 @@ public class CampaignController {
         return campaign.getId();
     }
 
+    @PostMapping("/editCampaigns")
+    public Long editCampaign(@RequestBody CampaignForm campaignForm)
+    {
+        Campaign campaign = campaignRepository.findById(campaignForm.getCampaignId()).get();
+        campaign.setTargetDonation(campaignForm.getTargetDonation());
+        campaign.setCampaignName(campaignForm.getCampaignName());
+        campaign.setCategory(campaignForm.getCategory());
+        campaign.setFundRaisingAs(campaignForm.getFundRaisingAs());
+        campaign.setCoverImagePath(campaignForm.getCoverImagePath());
+        campaign.setCampaignDetail(campaignForm.getCampaignDetail());
+        campaignRepository.save(campaign);
+        return campaign.getId();
+    }
+    @PostMapping("/updateCampaigns")
+    public Integer updateCampaign(@RequestBody CampaignUpdateForm campaignUpdateForm)
+    {
+
+        CampaignUpdate campaignUpdate = new CampaignUpdate();
+        campaignUpdate.setCampaignUpdateDetail(campaignUpdateForm.getCampaignUpdateDetail());
+        campaignUpdate.setUpdateTimestamp(campaignUpdateForm.getUpdateTimestamp());
+        Campaign campaign = campaignRepository.findById(campaignUpdateForm.getCampaignId()).get();
+        campaignUpdate.setCampaign(campaign);
+        campaignUpdateRepository.save(campaignUpdate);
+        return 1;
+    }
     @GetMapping("/campaigns/{campaignId}")
     public Campaign getCampaignData(@PathVariable Long campaignId)
     {
@@ -98,7 +128,12 @@ public class CampaignController {
         List<Campaign> temp = campaignRepository.findAllByUserId(userId);
         return temp;
     }
-    
+    @GetMapping("/getUpdateCampaigns/{campaignId}")
+    public List<CampaignUpdate> getUpdateCampaigns(@PathVariable Long campaignId)
+    {
+        List<CampaignUpdate> temp = campaignUpdateRepository.findAllByCampaignId(campaignId);
+        return temp;
+    }
     @PostMapping("/inactivateCampaign")
     public boolean inactivateCampaign(@RequestBody String campaignId)
     {
