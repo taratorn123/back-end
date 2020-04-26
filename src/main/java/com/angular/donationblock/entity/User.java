@@ -31,6 +31,10 @@ public class User extends BaseEntity
     {
     	return this.active;
     }
+    public void setPublicKey(String publicKey)
+    {
+    	this.publicKey = publicKey;
+    }
     public void setActive(Boolean active)
     {
     	this.active = active;
@@ -50,7 +54,6 @@ public class User extends BaseEntity
     		String email,
     		String username,
     		String password,
-    		String publicKey,
     		boolean verificationFlag)
     {
     	this.firstName = firstName;
@@ -60,16 +63,12 @@ public class User extends BaseEntity
     	this.password = password;
     	this.verificationFlag = verificationFlag;
     	this.privilegeLevel = 0;
-    	this.publicKey = publicKey;
-    	this.routeSignatureImage = "";
-    	this.routeImageVerification = "";
     }
     public User(String firstName,
     		String lastName,
     	    String email,
     	    String username,
-    	    String password,
-    	    String publicKey)
+    	    String password)
     {
     	this.firstName = firstName;
     	this.lastName = lastName;
@@ -78,9 +77,6 @@ public class User extends BaseEntity
     	this.password = password;
     	this.verificationFlag = false;
     	this.privilegeLevel = 0;
-    	this.publicKey = publicKey;
-    	this.routeSignatureImage = "";
-    	this.routeImageVerification = "";
     }
     public String getUsername() 
     {

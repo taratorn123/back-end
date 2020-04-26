@@ -38,7 +38,7 @@ public class Campaign extends BaseEntity
     {
     	return this.active;
     }
-    public void setActive(Boolean active)
+    public void setActive(boolean active)
     {
     	this.active = active;
     }

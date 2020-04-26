@@ -131,66 +131,35 @@ public class UserController
     public long addUser(@RequestBody UserForm userForm) throws MalformedURLException, IOException 
     {
     	User user = null;
-    	server = new Server(StellarConfig.stellarServer);
-    	System.out.println("This is user username   "+userForm.getUsername());
-    	KeyPair pair = KeyPair.random();
-		System.out.println(new String(pair.getSecretSeed()));
-		System.out.println(pair.getAccountId());
-		String friendbotUrl = String.format("https://friendbot.stellar.org/?addr=%s",pair.getAccountId());
-		InputStream response = new URL(friendbotUrl).openStream();
-		System.out.println(pair.getAccountId());
-		scanner = new Scanner(response, "UTF-8");
-		String body = scanner.useDelimiter("\\A").next();
-		System.out.println("SUCCESS! You have a new account :)\n" + body);
-		for(int i = 0; i < 10;i++)
-		{
-			try
-			{
-				AccountResponse account = server.accounts().account(pair.getAccountId());
-				System.out.println("Balances for account " + pair.getAccountId());
-				for (AccountResponse.Balance balance : account.getBalances()) 
-				{
-				  System.out.println(String.format(
-				    "Type: %s, Code: %s, Balance: %s",
-				    balance.getAssetType(),
-				    balance.getAssetCode(),
-				    balance.getBalance()));
-				}
-		        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-		        if(userForm.isVerificationFlag())
-		        {
-		        	user = new User(userForm.getFirstName(),userForm.getLastName(),userForm.getEmail(),
-		        			userForm.getUsername(),passwordEncoder.encode(userForm.getPassword()),
-		        			pair.getAccountId(),userForm.isVerificationFlag());
-		        	userRepository.save(user);
-		        	System.out.println("Saving database with image path");
-		        }
-		        else
-		        {
-		        	user = new User(userForm.getFirstName(),userForm.getLastName(),userForm.getEmail(),
-		        			userForm.getUsername(),passwordEncoder.encode(userForm.getPassword()),
-		        			pair.getAccountId());
-		        	userRepository.save(user);
-		        	System.out.println("Saving database");
-		        }
-		        return user.getId();
-			}
-			catch(ErrorResponse e)
-			{
-				if(i == 9)
-				{
-					return 0;
-				}
-				System.out.println(e.getBody());
-			}
-		}
-        return user.getId();
+    	BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    	if(userForm.isVerificationFlag())
+    	{
+    		user = new User(userForm.getFirstName(),userForm.getLastName(),userForm.getEmail(),
+    				userForm.getUsername(),passwordEncoder.encode(userForm.getPassword())
+    				,userForm.isVerificationFlag());
+    		userRepository.save(user);
+    		System.out.println("Saving database with image path");
+    	}
+    	else
+    	{
+    		user = new User(userForm.getFirstName(),userForm.getLastName(),userForm.getEmail(),
+    				userForm.getUsername(),passwordEncoder.encode(userForm.getPassword()));
+    		userRepository.save(user);
+    		System.out.println("Saving database");
+    	}
+    	return user.getId();
     }
 
 	@GetMapping("/current-user/{username}")
 	public User getUserData(@PathVariable String username) {
 		User temp = userRepository.findByUsername(username);
 		return temp;
+	}
+	
+	@PostMapping("/getUser")
+	public User getUserById(@RequestBody String userId)
+	{
+		return userRepository.findById(Long.parseLong(userId)).get();
 	}
 
 	@PostMapping("/current-user/edit")
@@ -199,37 +168,22 @@ public class UserController
 		userRepository.save(user);
 		return 1;
 	}
-	@PostMapping("/userImageVerification")
-	public boolean userImageVerification(@RequestParam("verification") MultipartFile verification,
-			@RequestParam("signature") MultipartFile signature,
-			@RequestParam Map<String, String> file)
+	@PostMapping("userImageSignature")
+	public boolean userImageSignature(@RequestBody User user)
 	{
-		User user = userRepository.findById(Long.parseLong(file.get("userId"))).get();
-        String directoryName = "D:\\GithubJr\\front-end\\src\\assets\\img\\"+user.getId()+"\\verification\\";
-        File directory = new File(directoryName);
-        if (! directory.exists())
-        {
-            directory.mkdirs();
-            // If you require it to make the entire directory path including parents,
-            // use directory.mkdirs(); here instead.
-        }
-        File verificationDest = new File(directoryName+"\\verification.jpg\\");
-        File signatureDest = new File(directoryName+"\\signature.jpg\\");
-        try 
-        {
-			verification.transferTo(verificationDest);
-			signature.transferTo(signatureDest);
-		} 
-        catch (IllegalStateException | IOException e) 
-        {
-			e.printStackTrace();
-			userRepository.delete(user);
-			return false;
-		}
-		user.setRouteImageVerification("../../assets/img/"+user.getId()+"/verification/verification.jpg");
-		user.setRouteSignatureImage("../../assets/img/"+user.getId()+"/verification/signature.jpg");
-		userRepository.save(user);
+		User systemUser = userRepository.findById(user.getId()).get();
+		systemUser.setRouteSignatureImage(user.getRouteSignatureImage());
+		userRepository.save(systemUser);
 		return true;
+	}
+	@PostMapping("/userImageVerification")
+	public boolean userImageVerification(@RequestBody User user)
+	{
+		User systemUser = userRepository.findById(user.getId()).get();
+		systemUser.setRouteImageVerification(user.getRouteImageVerification());
+		userRepository.save(systemUser);
+		return true;
+
 	}
 	
 	@GetMapping("/getverificationrequest")
@@ -238,6 +192,25 @@ public class UserController
 		List<User> users = userRepository.findAllByVerificationFlag(true);
 		return users;
 		
+	}
+	@PostMapping("/approveuseridentity")
+	public boolean approveUserIdentity(@RequestBody String userId)
+	{
+		System.out.println("approveUserIdentity, UserController : Receive");
+		User user = userRepository.findById(Long.parseLong(userId)).get();
+		user.setPrivilegeLevel(2);
+		user.setVerificationFlag(false);
+		userRepository.save(user);
+		return true;
+	}
+	@PostMapping("/declineuseridentity")
+	public boolean declineUserIdentity(@RequestBody String userId)
+	{
+		User user = userRepository.findById(Long.parseLong(userId)).get();
+		user.setPrivilegeLevel(1);
+		user.setVerificationFlag(false);
+		userRepository.save(user);
+		return true;
 	}
 
 }
