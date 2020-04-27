@@ -11,4 +11,5 @@ public interface AccountDonationRepository extends JpaRepository<AccountDonation
 	List<AccountDonation> findAllByCampaignId(Long campaignId);
 	AccountDonation findByTransactionHash(String transactionHash);
 	List<AccountDonation> findAllByUserId(Long userId);
+	List<AccountDonation> findByCampaignIdAndCommentNotNull(Long campaignId);
 }

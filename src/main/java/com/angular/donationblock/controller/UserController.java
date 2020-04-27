@@ -16,6 +16,7 @@ import org.stellar.sdk.requests.ErrorResponse;
 import org.stellar.sdk.responses.AccountResponse;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.validation.BindingResult;
+import org.stellar.sdk.responses.SubmitTransactionResponse;
 
 import java.io.File;
 import java.io.IOException;
@@ -211,6 +212,23 @@ public class UserController
 		user.setVerificationFlag(false);
 		userRepository.save(user);
 		return true;
+	}
+
+	@GetMapping("/getUserBalance/{userId}")
+	public String getUserBalance(@PathVariable Long userId) throws IOException {
+		User user = userRepository.findById(userId).get();
+		AccountResponse account = server.accounts().account(user.getPublicKey());
+		System.out.println("Hello "+ account.getAccountId());
+		System.out.println("Balances for account " + account.getAccountId());
+		/* Check if user have enough balance to donate money, if not return 0*/
+		for (AccountResponse.Balance balance : account.getBalances())
+		{
+			if(balance.getAssetType().compareTo("native")==0)
+			{
+				return balance.getBalance();
+			}
+		}
+		return null;
 	}
 
 }

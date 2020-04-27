@@ -156,7 +156,7 @@ public class CampaignController {
     @GetMapping("/getCommentCampaigns/{campaignId}")
     public List<AccountDonation> getCommentCampaigns(@PathVariable Long campaignId)
     {
-        List<AccountDonation> temp = accountDonationRepository.findAllByCampaignId(campaignId);
+        List<AccountDonation> temp = accountDonationRepository.findByCampaignIdAndCommentNotNull(campaignId);
 
         return temp;
     }
