@@ -22,10 +22,26 @@ public class User extends BaseEntity
     private String routeImageVerification;
     private boolean enabled = false;
     private boolean active = false;
+    private String routeUserImage;
 
     public User()
     {
     	
+    }
+    public User(String firstName,
+    		String lastName,
+    		String email,
+    		String username,
+    		String password,
+    		boolean verificationFlag)
+    {
+    	this.firstName = firstName;
+    	this.lastName = lastName;
+    	this.email = email;
+    	this.username = username;
+    	this.password = password;
+    	this.verificationFlag = verificationFlag;
+    	this.privilegeLevel = 0;
     }
     public boolean isActive()
     {
@@ -49,21 +65,7 @@ public class User extends BaseEntity
 		this.enabled = enabled;
 		System.out.println("Result "+this.username+" to "+enabled);
 	}
-	public User(String firstName,
-    		String lastName,
-    		String email,
-    		String username,
-    		String password,
-    		boolean verificationFlag)
-    {
-    	this.firstName = firstName;
-    	this.lastName = lastName;
-    	this.email = email;
-    	this.username = username;
-    	this.password = password;
-    	this.verificationFlag = verificationFlag;
-    	this.privilegeLevel = 0;
-    }
+
     public User(String firstName,
     		String lastName,
     	    String email,
@@ -145,6 +147,14 @@ public class User extends BaseEntity
 	public String getPublicKey() 
 	{
 		return publicKey;
+	}
+	public String getRouteUserImage()
+	{
+		return routeUserImage;
+	}
+	public void setRouteUserImage(String routeUserImage)
+	{
+		this.routeUserImage= routeUserImage;
 	}
 
 

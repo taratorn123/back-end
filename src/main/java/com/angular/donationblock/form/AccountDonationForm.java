@@ -9,9 +9,10 @@ public class AccountDonationForm
 	private String comment;
 	private String privateKey;
 	private boolean anonymousFlag;
+	private double exchageRate;
 
 	public AccountDonationForm(String campaignId, String userId,String amount,String comment,
-			String privateKey, boolean anonymousFlag)
+			String privateKey, boolean anonymousFlag,double exchangeRate)
 	{
 		this.campaignId = campaignId;
 		this.userId = userId;
@@ -19,6 +20,11 @@ public class AccountDonationForm
 		this.comment=comment;
 		this.anonymousFlag=anonymousFlag;
 		this.privateKey=privateKey;
+		this.exchageRate = exchangeRate;
+	}
+	public double getExchageRate() 
+	{
+		return exchageRate;
 	}
 	public String getCampaignId() {
 		return campaignId;

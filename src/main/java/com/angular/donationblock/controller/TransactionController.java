@@ -88,10 +88,11 @@ public class TransactionController
     	System.out.println(accountDonationForm.getAmount());
     	System.out.println(accountDonationForm.getCampaignId());
     	System.out.println(accountDonationForm.getUserId());
+    	System.out.println(accountDonationForm.getExchageRate());
     	AccountDonation accountDonation = new AccountDonation(
     			userRepository.findByUsername(accountDonationForm.getUserId()),
     			campaignRepository.findById(Long.parseLong(accountDonationForm.getCampaignId())).get(),
-    			DatabaseUtil.decimalConverter(accountDonationForm.getAmount()),accountDonationForm.getComment(),accountDonationForm.getAnonymousFlag());
+    			DatabaseUtil.decimalConverter(accountDonationForm.getAmount()),accountDonationForm.getComment(),accountDonationForm.getAnonymousFlag(),accountDonationForm.getExchageRate());
     	AccountResponse account = server.accounts().account(accountDonation.getUser().getPublicKey());
 		System.out.println("Hello "+ account.getAccountId());
 		System.out.println("Balances for account " + account.getAccountId());
@@ -107,7 +108,6 @@ public class TransactionController
 				}
 			}
 		}
-		
 		System.out.println("Get Private key");
     	try
     	{
@@ -176,8 +176,8 @@ public class TransactionController
 			// If the result is unknown (no response body, timeout etc.) we simply resubmit
 			// already built transaction:
 			// SubmitTransactionResponse response = server.submitTransaction(transaction);
+			return 2;
 		}
-		return 3;
     }
     private void saveTransaction(AccountDonation accountDonation)
     {

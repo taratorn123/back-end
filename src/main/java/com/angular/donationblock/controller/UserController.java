@@ -187,6 +187,16 @@ public class UserController
 
 	}
 	
+	
+	@PostMapping("/setUserCoverImage")
+	public boolean setUserCoverImage(@RequestBody User user)
+	{
+		User systemUser = userRepository.findById(user.getId()).get();
+		System.out.println("UserController setUserCoverImage : "+user.getRouteUserImage());
+		systemUser.setRouteUserImage(user.getRouteUserImage());
+		userRepository.save(systemUser);
+		return true;
+	}
 	@GetMapping("/getverificationrequest")
 	public List<User> getVerificationRequest()
 	{

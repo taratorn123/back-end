@@ -15,6 +15,7 @@ public class AccountDonation extends BaseEntity
     private String comment;
     private String transactionHash;
     private boolean anonymousFlag;
+    private double exchangeRate;
     
     @ManyToOne(cascade = CascadeType.MERGE)
     private Campaign campaign;
@@ -23,18 +24,25 @@ public class AccountDonation extends BaseEntity
     private User user;
     
     
-    public AccountDonation() 
+	public AccountDonation() 
     {
+    	
 	}
 
-	public AccountDonation(User user, Campaign campaign, String amount, String comment, boolean anonymousFlag)
+	public AccountDonation(User user, Campaign campaign, String amount, String comment, boolean anonymousFlag,double exchangeRate)
     {
     	this.user = user;
     	this.campaign = campaign;
     	this.amount = amount;
     	this.comment = comment;
     	this.anonymousFlag = anonymousFlag;
+    	this.exchangeRate = exchangeRate;
     }
+
+	public double getExchageRate() 
+    {
+		return exchangeRate;
+	}
 
 	public String getAmount() 
 	{
