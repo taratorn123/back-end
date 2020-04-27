@@ -104,18 +104,33 @@ public class CampaignController {
         return campaign.getId();
     }
     @PostMapping("/updateCampaigns")
-    public Integer updateCampaign(@RequestBody CampaignUpdateForm campaignUpdateForm)
+    public Long updateCampaign(@RequestBody CampaignUpdateForm campaignUpdateForm)
     {
-
         CampaignUpdate campaignUpdate = new CampaignUpdate();
         campaignUpdate.setCampaignUpdateDetail(campaignUpdateForm.getCampaignUpdateDetail());
         campaignUpdate.setUpdateTimestamp(campaignUpdateForm.getUpdateTimestamp());
         Campaign campaign = campaignRepository.findById(campaignUpdateForm.getCampaignId()).get();
         campaignUpdate.setCampaign(campaign);
-        campaignUpdateRepository.save(campaignUpdate);
-        return 1;
+        CampaignUpdate temp = campaignUpdateRepository.save(campaignUpdate);
+        return temp.getId();
     }
 
+    @GetMapping("/updateCampaignsId")
+    public Long getLastestUpdateCampaignsId()
+    {
+        Optional<CampaignUpdate> temp = Optional.ofNullable(campaignUpdateRepository.findTopByOrderByIdDesc());
+        if(temp.isPresent())
+            return campaignUpdateRepository.findTopByOrderByIdDesc().getId();
+        else
+            return new CampaignUpdate().getId();
+    }
+    //Find campaigns by campaign's category
+    @GetMapping("/getCampaignCategory/{campaignCategory}")
+    public List<Campaign> getCampaignByCategory(@PathVariable String campaignCategory)
+    {
+        List<Campaign> temp = campaignRepository.findCampaignsByCategory(campaignCategory);
+        return temp;
+    }
     @GetMapping("/campaigns/{campaignId}")
     public Campaign getCampaignData(@PathVariable Long campaignId)
     {

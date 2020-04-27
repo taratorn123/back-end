@@ -13,6 +13,7 @@ public class CampaignUpdate extends BaseEntity {
     private Campaign campaign;
 
     private Date updateTimestamp;
+    @Lob
     private String campaignUpdateDetail;
 
     public Campaign getCampaign() {
