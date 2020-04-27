@@ -10,5 +10,5 @@ import java.util.List;
 
 public interface CampaignUpdateRepository extends JpaRepository<CampaignUpdate, Long> {
     List<CampaignUpdate> findAllByCampaignId(Long campaignId);
-
+    CampaignUpdate findTopByOrderByIdDesc();
 }
