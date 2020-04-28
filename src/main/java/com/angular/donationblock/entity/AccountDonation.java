@@ -3,8 +3,14 @@ package com.angular.donationblock.entity;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
 import java.sql.Timestamp;
+import java.text.DecimalFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 @Entity
@@ -88,7 +94,17 @@ public class AccountDonation extends BaseEntity
 		return "ID : "+this.getId()+" From "+this.getUser().getUsername()+
 				" To "+this.getCampaign().getCampaignName()+" Amount "+this.getAmount();
 	}
-//	public Date TimestampToDateExample (){
-//    	return Date date=new Date(this.getTimestamp().getTime());
-//	}
+//	@GetMapping("getTotalDonate/{campaignId}")
+//    public String getTotalDonate(@PathVariable long campaignId)
+//    {
+//    	double totalDonate = 0;
+//    	List<AccountDonation> transactions = accountDonationRepository.findAllByCampaignId(campaignId);
+//    	
+//    	for(AccountDonation transaction : transactions)
+//    	{
+//    		totalDonate += transaction.getExchageRate()*Double.parseDouble(transaction.getAmount());
+//    	}
+//    	DecimalFormat df = new DecimalFormat("#.00"); 
+//    	return df.format(totalDonate);
+//    }
 }

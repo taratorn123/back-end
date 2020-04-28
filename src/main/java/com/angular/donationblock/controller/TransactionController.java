@@ -194,6 +194,7 @@ public class TransactionController
     	Campaign campaign = campaignRepository.findById(campaignId).get();
     	List<TransactionModel> transactionHistory = new ArrayList<TransactionModel>();
     	List<AccountDonation> systemTransaction = accountDonationRepository.findAllByCampaignId(campaignId);
+    	System.out.println(systemTransaction.size());
     	if(systemTransaction.isEmpty())
     	{
     		transactionHistory.add(new TransactionModel(campaign.getCampaignName(),campaign.getUser().getPublicKey()));
@@ -206,7 +207,10 @@ public class TransactionController
     	PaymentsRequestBuilder paymentsRequest = server.payments().forAccount(responseAcc);
 		try 
 		{
-			for(OperationResponse payment : paymentsRequest.execute().getRecords())
+			ArrayList<OperationResponse> payments = paymentsRequest.execute().getRecords();
+			System.out.println("getHistoryTransactionCampaign stellar trasnaction number: "+payments.size());
+
+			for(OperationResponse payment : payments)
 			{
 				if (payment instanceof PaymentOperationResponse) 
 				{
@@ -216,6 +220,7 @@ public class TransactionController
 					{
 						for(AccountDonation transaction : systemTransaction)
 						{
+							System.out.println(transaction.getTransactionHash()+" Stellar : "+payment.getTransactionHash());
 							if(transaction.getTransactionHash().compareTo(payment.getTransactionHash()) == 0)
 							{
 								System.out.println(transaction.getTransactionHash()+"\n"+payment.getTransactionHash());
