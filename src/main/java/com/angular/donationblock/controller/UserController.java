@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,9 +41,8 @@ public class UserController
 
     @Autowired
     private UserRepository userRepository;
-    
-	private Server server;
-	private Scanner scanner;
+
+	private Server server = new Server(StellarConfig.stellarServer);	private Scanner scanner;
 
     @GetMapping("/users")
     public List<User> getUsers() 
@@ -226,6 +226,8 @@ public class UserController
 
 	@GetMapping("/getUserBalance/{userId}")
 	public String getUserBalance(@PathVariable Long userId) throws IOException {
+		double totalDonate = 0;
+		DecimalFormat df = new DecimalFormat("#.00");
 		User user = userRepository.findById(userId).get();
 		AccountResponse account = server.accounts().account(user.getPublicKey());
 		System.out.println("Hello "+ account.getAccountId());
@@ -235,7 +237,7 @@ public class UserController
 		{
 			if(balance.getAssetType().compareTo("native")==0)
 			{
-				return balance.getBalance();
+				return df.format(Double.parseDouble(balance.getBalance()));
 			}
 		}
 		return null;
