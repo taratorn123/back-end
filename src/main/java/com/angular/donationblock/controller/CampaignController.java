@@ -11,6 +11,7 @@ import com.angular.donationblock.form.CampaignForm;
 import com.angular.donationblock.form.CampaignUpdateForm;
 import com.angular.donationblock.form.ReportForm;
 import com.angular.donationblock.form.UserForm;
+import com.angular.donationblock.model.CampaignModel;
 import com.angular.donationblock.model.TransactionModel;
 import com.angular.donationblock.repository.AccountDonationRepository;
 import com.angular.donationblock.repository.CampaignRepository;
@@ -42,6 +43,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Principal;
 import java.sql.Timestamp;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -62,15 +64,29 @@ public class CampaignController {
     private AccountDonationRepository accountDonationRepository;
 
     @GetMapping("/campaigns-list")
-    public List<Campaign> getCampaigns()
+    public List<CampaignModel> getCampaignsTest1()
     {
-    	List<Campaign> output = new ArrayList<Campaign>();
+    	
+    	List<CampaignModel> output = new ArrayList<CampaignModel>();
+    	double totalDonate;
     	for(Campaign campaign : campaignRepository.findAll())
     	{
+    		totalDonate = 0;
+    		for(AccountDonation transaction : accountDonationRepository.
+    				findAllByCampaignId(campaign.getId()))
+    		{
+    			totalDonate += transaction.getExchageRate()*Double.parseDouble(transaction.getAmount());
+    		}
+    		DecimalFormat df = new DecimalFormat("#.00"); 
+    		output.add(new CampaignModel(campaign.getId(),campaign.isDeleted(),campaign.getUser(),campaign.getTargetDonation(),
+    				campaign.getCampaignName(),campaign.getCategory(),campaign.getFundRaisingAs(),
+    				campaign.getStartDate(),campaign.getCampaignDetail(),campaign.getCoverImagePath(),
+    				campaign.isActive(),df.format(totalDonate)));
     		
     	}
-        return campaignRepository.findAll();
+        return output;
     }
+    
     //Save both campaign and owner of the campaign to map together
     @PostMapping("/campaignUser")
     public Integer saveCampaignUser(@RequestBody CampaignForm campaignForm)
@@ -188,6 +204,20 @@ public class CampaignController {
     	campaignRepository.save(campaign);
     	System.out.println("Campaign "+campaign.getId()+" "+campaign.getCampaignName()+" Activated");
     	return true;
+    }
+    
+    @GetMapping("getTotalDonate/{campaignId}")
+    public String getTotalDonate(@PathVariable long campaignId)
+    {
+    	double totalDonate = 0;
+	  	List<AccountDonation> transactions = accountDonationRepository.findAllByCampaignId(campaignId);
+	  	
+	  	for(AccountDonation transaction : transactions)
+	  	{
+	  		totalDonate += transaction.getExchageRate()*Double.parseDouble(transaction.getAmount());
+	  	}
+	  	DecimalFormat df = new DecimalFormat("#.00"); 
+	  	return df.format(totalDonate);
     }
 
 }
