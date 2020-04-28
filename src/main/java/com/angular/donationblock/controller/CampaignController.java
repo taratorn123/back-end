@@ -64,7 +64,7 @@ public class CampaignController {
     private AccountDonationRepository accountDonationRepository;
 
     @GetMapping("/campaigns-list")
-    public List<CampaignModel> getCampaignsTest1()
+    public List<CampaignModel> getCampaigns()
     {
 
         List<CampaignModel> output = new ArrayList<CampaignModel>();
