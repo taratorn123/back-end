@@ -71,18 +71,21 @@ public class CampaignController {
     	double totalDonate;
     	for(Campaign campaign : campaignRepository.findAll())
     	{
-    		totalDonate = 0;
-    		for(AccountDonation transaction : accountDonationRepository.
-    				findAllByCampaignId(campaign.getId()))
+    		if(campaign.isActive())
     		{
-    			totalDonate += transaction.getExchageRate()*Double.parseDouble(transaction.getAmount());
+    			totalDonate = 0;
+        		for(AccountDonation transaction : accountDonationRepository.
+        				findAllByCampaignId(campaign.getId()))
+        		{
+        			totalDonate += transaction.getExchageRate()*Double.parseDouble(transaction.getAmount());
+        		}
+        		DecimalFormat df = new DecimalFormat("#.00"); 
+        		output.add(new CampaignModel(campaign.getId(),campaign.isDeleted(),campaign.getUser(),campaign.getTargetDonation(),
+        				campaign.getCampaignName(),campaign.getCategory(),campaign.getFundRaisingAs(),
+        				campaign.getStartDate(),campaign.getCampaignDetail(),campaign.getCoverImagePath(),
+        				campaign.isActive(),df.format(totalDonate)));
+        		
     		}
-    		DecimalFormat df = new DecimalFormat("#.00"); 
-    		output.add(new CampaignModel(campaign.getId(),campaign.isDeleted(),campaign.getUser(),campaign.getTargetDonation(),
-    				campaign.getCampaignName(),campaign.getCategory(),campaign.getFundRaisingAs(),
-    				campaign.getStartDate(),campaign.getCampaignDetail(),campaign.getCoverImagePath(),
-    				campaign.isActive(),df.format(totalDonate)));
-    		
     	}
         return output;
     }
@@ -102,6 +105,7 @@ public class CampaignController {
     @PostMapping("/campaigns")
     public Long addCampaign(@RequestBody Campaign campaignForm)
     {
+    	campaignForm.setActive(true);
         Campaign campaign = campaignRepository.save(campaignForm);
         return campaign.getId();
     }
@@ -210,8 +214,12 @@ public class CampaignController {
     public String getTotalDonate(@PathVariable long campaignId)
     {
     	double totalDonate = 0;
+    	String empty ="0";
 	  	List<AccountDonation> transactions = accountDonationRepository.findAllByCampaignId(campaignId);
-	  	
+	  	if(transactions.size() == 0)
+	  	{
+	  		return empty;
+	  	}
 	  	for(AccountDonation transaction : transactions)
 	  	{
 	  		totalDonate += transaction.getExchageRate()*Double.parseDouble(transaction.getAmount());
