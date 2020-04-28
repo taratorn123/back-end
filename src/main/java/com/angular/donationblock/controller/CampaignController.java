@@ -66,27 +66,55 @@ public class CampaignController {
     @GetMapping("/campaigns-list")
     public List<CampaignModel> getCampaignsTest1()
     {
-    	
-    	List<CampaignModel> output = new ArrayList<CampaignModel>();
-    	double totalDonate;
-    	for(Campaign campaign : campaignRepository.findAll())
-    	{
-    		totalDonate = 0;
-    		for(AccountDonation transaction : accountDonationRepository.
-    				findAllByCampaignId(campaign.getId()))
-    		{
-    			totalDonate += transaction.getExchageRate()*Double.parseDouble(transaction.getAmount());
-    		}
-    		DecimalFormat df = new DecimalFormat("#.00"); 
-    		output.add(new CampaignModel(campaign.getId(),campaign.isDeleted(),campaign.getUser(),campaign.getTargetDonation(),
-    				campaign.getCampaignName(),campaign.getCategory(),campaign.getFundRaisingAs(),
-    				campaign.getStartDate(),campaign.getCampaignDetail(),campaign.getCoverImagePath(),
-    				campaign.isActive(),df.format(totalDonate)));
-    		
-    	}
+
+        List<CampaignModel> output = new ArrayList<CampaignModel>();
+        double totalDonate;
+        for(Campaign campaign : campaignRepository.findAll())
+        {
+            if(campaign.isActive())
+            {
+                totalDonate = 0;
+                for(AccountDonation transaction : accountDonationRepository.
+                        findAllByCampaignId(campaign.getId()))
+                {
+                    totalDonate += transaction.getExchageRate()*Double.parseDouble(transaction.getAmount());
+                }
+                DecimalFormat df = new DecimalFormat("#.00");
+                output.add(new CampaignModel(campaign.getId(),campaign.isDeleted(),campaign.getUser(),campaign.getTargetDonation(),
+                        campaign.getCampaignName(),campaign.getCategory(),campaign.getFundRaisingAs(),
+                        campaign.getStartDate(),campaign.getCampaignDetail(),campaign.getCoverImagePath(),
+                        campaign.isActive(),df.format(totalDonate)));
+
+            }
+        }
         return output;
     }
-    
+    //Get campaigns by userId (ManageCampaignPage)
+    @GetMapping("/userscampaigns/{userId}")
+    public List<CampaignModel> getUserCampaign(@PathVariable Long userId)
+    {
+        List<CampaignModel> output = new ArrayList<CampaignModel>();
+        double totalDonate;
+        for(Campaign campaign : campaignRepository.findAllByUserId(userId))
+        {
+            if(campaign.isActive())
+            {
+                totalDonate = 0;
+                for(AccountDonation transaction : accountDonationRepository.
+                        findAllByCampaignId(campaign.getId()))
+                {
+                    totalDonate += transaction.getExchageRate()*Double.parseDouble(transaction.getAmount());
+                }
+                DecimalFormat df = new DecimalFormat("#.00");
+                output.add(new CampaignModel(campaign.getId(),campaign.isDeleted(),campaign.getUser(),campaign.getTargetDonation(),
+                        campaign.getCampaignName(),campaign.getCategory(),campaign.getFundRaisingAs(),
+                        campaign.getStartDate(),campaign.getCampaignDetail(),campaign.getCoverImagePath(),
+                        campaign.isActive(),df.format(totalDonate)));
+
+            }
+        }
+        return output;
+    }
     //Save both campaign and owner of the campaign to map together
     @PostMapping("/campaignUser")
     public Integer saveCampaignUser(@RequestBody CampaignForm campaignForm)
@@ -102,6 +130,7 @@ public class CampaignController {
     @PostMapping("/campaigns")
     public Long addCampaign(@RequestBody Campaign campaignForm)
     {
+        campaignForm.setActive(true);
         Campaign campaign = campaignRepository.save(campaignForm);
         return campaign.getId();
     }
@@ -157,12 +186,7 @@ public class CampaignController {
             return new Campaign();
     }
 
-    @GetMapping("/userscampaigns/{userId}")
-    public List<Campaign> getUserCampaign(@PathVariable Long userId) 
-    {
-        List<Campaign> temp = campaignRepository.findAllByUserId(userId);
-        return temp;
-    }
+
     @GetMapping("/getUpdateCampaigns/{campaignId}")
     public List<CampaignUpdate> getUpdateCampaigns(@PathVariable Long campaignId)
     {
@@ -205,19 +229,23 @@ public class CampaignController {
     	System.out.println("Campaign "+campaign.getId()+" "+campaign.getCampaignName()+" Activated");
     	return true;
     }
-    
+
     @GetMapping("getTotalDonate/{campaignId}")
     public String getTotalDonate(@PathVariable long campaignId)
     {
-    	double totalDonate = 0;
-	  	List<AccountDonation> transactions = accountDonationRepository.findAllByCampaignId(campaignId);
-	  	
-	  	for(AccountDonation transaction : transactions)
-	  	{
-	  		totalDonate += transaction.getExchageRate()*Double.parseDouble(transaction.getAmount());
-	  	}
-	  	DecimalFormat df = new DecimalFormat("#.00"); 
-	  	return df.format(totalDonate);
+        double totalDonate = 0;
+        String empty ="0";
+        List<AccountDonation> transactions = accountDonationRepository.findAllByCampaignId(campaignId);
+        if(transactions.size() == 0)
+        {
+            return empty;
+        }
+        for(AccountDonation transaction : transactions)
+        {
+            totalDonate += transaction.getExchageRate()*Double.parseDouble(transaction.getAmount());
+        }
+        DecimalFormat df = new DecimalFormat("#.00");
+        return df.format(totalDonate);
     }
 
 }
