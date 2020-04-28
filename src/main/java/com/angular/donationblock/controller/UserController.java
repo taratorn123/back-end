@@ -226,7 +226,6 @@ public class UserController
 
 	@GetMapping("/getUserBalance/{userId}")
 	public String getUserBalance(@PathVariable Long userId) throws IOException {
-		double totalDonate = 0;
 		DecimalFormat df = new DecimalFormat("#.00");
 		User user = userRepository.findById(userId).get();
 		AccountResponse account = server.accounts().account(user.getPublicKey());
