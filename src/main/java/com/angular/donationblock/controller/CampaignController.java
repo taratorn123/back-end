@@ -171,10 +171,28 @@ public class CampaignController {
     }
     //Find campaigns by campaign's category
     @GetMapping("/getCampaignCategory/{campaignCategory}")
-    public List<Campaign> getCampaignByCategory(@PathVariable String campaignCategory)
+    public List<CampaignModel> getCampaignByCategory(@PathVariable String campaignCategory)
     {
-        List<Campaign> temp = campaignRepository.findCampaignsByCategory(campaignCategory);
-        return temp;
+        List<CampaignModel> output = new ArrayList<CampaignModel>();
+        double totalDonate;
+        for(Campaign campaign : campaignRepository.findCampaignsByCategory(campaignCategory))
+        {
+            if(campaign.isActive())
+            {
+                totalDonate = 0;
+                for(AccountDonation transaction : accountDonationRepository.
+                        findAllByCampaignId(campaign.getId()))
+                {
+                    totalDonate += transaction.getExchageRate()*Double.parseDouble(transaction.getAmount());
+                }
+                DecimalFormat df = new DecimalFormat("#.00");
+                output.add(new CampaignModel(campaign.getId(),campaign.isDeleted(),campaign.getUser(),campaign.getTargetDonation(),
+                        campaign.getCampaignName(),campaign.getCategory(),campaign.getFundRaisingAs(),
+                        campaign.getStartDate(),campaign.getCampaignDetail(),campaign.getCoverImagePath(),
+                        campaign.isActive(),df.format(totalDonate)));
+            }
+        }
+        return output;
     }
     @GetMapping("/campaigns/{campaignId}")
     public Campaign getCampaignData(@PathVariable Long campaignId)
