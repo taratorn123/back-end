@@ -111,7 +111,7 @@ public class EmailController
 			    tokenRepo.delete(verificationToken);
 			}
 		}
-		redirectView.setUrl("http://localhost:4200/sign-in");
+		redirectView.setUrl("http://34.87.165.176/sign-in");
 		return redirectView;
 	}
 	/**
@@ -198,8 +198,8 @@ public class EmailController
 		mailProperties.put("mail.smtp.port","587");
 		/* Current system Gmail*/
 		String myAccountEmail = "stellardonation053@gmail.com";
-		String password = "35e5af785d";
-
+		String password = "aeing785329";
+		System.out.println("before authenticate");
 		Session session = Session.getInstance(mailProperties, new Authenticator()
 				{
 					@Override
@@ -208,6 +208,7 @@ public class EmailController
 						return new PasswordAuthentication(myAccountEmail,password);
 					}
 				});
+		System.out.println("After authenticate");
 		Message message = prepareMessage(session,myAccountEmail,user.getEmail(),token,user.getUsername(),privateKey,pair.getAccountId());
 		try
 		{
@@ -217,6 +218,7 @@ public class EmailController
 		}
 		catch (MessagingException e)
 		{
+			System.out.println("send message error");
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return false;
@@ -241,7 +243,7 @@ public class EmailController
 					+ "Private Key : " + privateKey+"\n\n"
 					+ "----------------------------------------------------------------------------------------------------------\n"
 					+ "Please verify your email address by clicking on the below link\n"
-					+ "http://localhost:8080/activate?token="+token);
+					+ "http://34.87.165.176:8080/activate?token="+token);
 			return message;
 		}
 		catch (MessagingException e)

@@ -86,13 +86,13 @@ public class GeneratePdfReport
             cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
             cell.setHorizontalAlignment(Element.ALIGN_CENTER);
             table.addCell(cell);
-            
+
+            Paragraph campaignOwner = new Paragraph(transaction.getUser().getFirstName()+" "+transaction.getUser().getLastName(),headFont);
+			campaignOwner.setIndentationLeft(360f);
             /*Stellar Donation*/
             Paragraph companyName = new Paragraph("Company name : Stellar Donation",headFont);
             Paragraph companyEmail = new Paragraph("Company email : stellardonation053@gmail.com",headFont);
-   
-//            companyName.setAlignment(Element.ALIGN_RIGHT);
-//            companyEmail.setAlignment(Element.ALIGN_RIGHT);
+
             companyName.setIndentationLeft(220f);
             companyEmail.setIndentationLeft(220f);
             
@@ -131,7 +131,7 @@ public class GeneratePdfReport
 	    	document.add(Chunk.NEWLINE);
 	    	document.add(Chunk.NEWLINE);
 	    	document.add(Chunk.NEWLINE);
-	    	document.add(Chunk.NEWLINE);
+	    	document.add(campaignOwner);
 	    	document.add(Chunk.NEWLINE);
 	    	document.add(Chunk.NEWLINE);
 	    	document.add(Chunk.NEWLINE);

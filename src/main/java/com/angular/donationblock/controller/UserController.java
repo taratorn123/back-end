@@ -42,7 +42,8 @@ public class UserController
     @Autowired
     private UserRepository userRepository;
 
-	private Server server = new Server(StellarConfig.stellarServer);	private Scanner scanner;
+	private Server server = new Server(StellarConfig.stellarServer);
+	private Scanner scanner;
 
     @GetMapping("/users")
     public List<User> getUsers() 
@@ -227,8 +228,17 @@ public class UserController
 	@GetMapping("/getUserBalance/{userId}")
 	public String getUserBalance(@PathVariable Long userId) throws IOException {
 		DecimalFormat df = new DecimalFormat("#.00");
+		AccountResponse account = null;
 		User user = userRepository.findById(userId).get();
-		AccountResponse account = server.accounts().account(user.getPublicKey());
+		try
+		{
+			account = server.accounts().account(user.getPublicKey());
+		}
+		catch(ErrorResponse e)
+		{
+			System.out.println(e.getBody());
+		}
+
 		System.out.println("Hello "+ account.getAccountId());
 		System.out.println("Balances for account " + account.getAccountId());
 		/* Check if user have enough balance to donate money, if not return 0*/

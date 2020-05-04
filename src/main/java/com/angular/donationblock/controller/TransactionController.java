@@ -334,7 +334,7 @@ public class TransactionController
     	return output;
     }
     
-    @GetMapping("/getTrasnactionReport/{encoded}")
+    @GetMapping("/getTransactionReport/{encoded}")
     public ResponseEntity<InputStreamResource> getReport(@PathVariable String encoded) throws UnsupportedEncodingException
     {
     	try
