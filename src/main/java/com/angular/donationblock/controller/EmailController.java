@@ -237,11 +237,15 @@ public class EmailController
 			message.setFrom(new InternetAddress(myAccountEmail));
 			message.setRecipient(Message.RecipientType.TO, new InternetAddress(recepient));
 			message.setSubject("Email Verification");
-			message.setText(""
+			message.setText("IMPORTANT : PLEASE KEEP THIS EMAIL STRICTLY CONFIDENTIAL\n\n"
 					+ "ID : " + username+"\n"
-					+ "Public Key : " + publicKey+"\n"
+					+ "Public Key : " + publicKey+"\n\n"
+					+ "---------------------------------------------------------------------------------------------------------------------------\n\n"
+					+ "REVEAL PRIVATE KEY\n\n"
+					+ "Please keep your Private key safe and don't share it with anyone. Private key gives direct access to your money.\n"
+					+ "Private key will be use for a future reference while you donate money.\n\n"
 					+ "Private Key : " + privateKey+"\n\n"
-					+ "----------------------------------------------------------------------------------------------------------\n"
+					+ "---------------------------------------------------------------------------------------------------------------------------\n\n"
 					+ "Please verify your email address by clicking on the below link\n"
 					+ "http://34.87.165.176:8080/activate?token="+token);
 			return message;

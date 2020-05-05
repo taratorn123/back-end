@@ -2,6 +2,8 @@ package com.angular.donationblock.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.MalformedURLException;
 
 import com.angular.donationblock.entity.AccountDonation;
 import com.itextpdf.text.BaseColor;
@@ -12,6 +14,7 @@ import com.itextpdf.text.Element;
 import com.itextpdf.text.Font;
 import com.itextpdf.text.Font.FontFamily;
 import com.itextpdf.text.FontFactory;
+import com.itextpdf.text.Image;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Phrase;
 import com.itextpdf.text.pdf.PdfPCell;
@@ -20,7 +23,7 @@ import com.itextpdf.text.pdf.PdfWriter;
 
 public class GeneratePdfReport 
 {
-	public static ByteArrayInputStream test(AccountDonation transaction)
+	public static ByteArrayInputStream test(AccountDonation transaction) throws MalformedURLException, IOException
 	{
 		Document document = new Document(); 
 		/*
@@ -34,7 +37,7 @@ public class GeneratePdfReport
     		Font fontHeader = new Font(FontFamily.TIMES_ROMAN,20f,
     				Font.UNDERLINE,BaseColor.BLACK);
     		Font headFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD);
-	    	Paragraph header = new Paragraph ("TRANSACTION REPORT",fontHeader); 
+	    	Paragraph header = new Paragraph ("DONATION RECEIPT",fontHeader); 
 	    	header.setAlignment(Element.ALIGN_CENTER);
 	    	
 	    	Paragraph firstNameLastName = new Paragraph ("Name : "+transaction.getUser().getFirstName()+" "+transaction.getUser().getLastName(),headFont); 
@@ -87,14 +90,27 @@ public class GeneratePdfReport
             cell.setHorizontalAlignment(Element.ALIGN_CENTER);
             table.addCell(cell);
 
-            Paragraph campaignOwner = new Paragraph(transaction.getUser().getFirstName()+" "+transaction.getUser().getLastName(),headFont);
-			campaignOwner.setIndentationLeft(360f);
+			
+			/*Add image to pdf file*/
+			Image image1 = Image.getInstance(transaction.getCampaign().getUser().getRouteSignatureImage());
+			image1.setAlignment(Element.ALIGN_CENTER);
+			image1.scaleAbsolute(100,100);
+			image1.setIndentationLeft(150f);
+			
+			/*Insert Campaign Owner*/
+			Paragraph owner = new Paragraph(transaction.getCampaign().getUser().getFirstName()+" "+transaction.getCampaign().getUser().getLastName(),headFont);
+			Paragraph campaignOwner = new Paragraph("(Campaign Owner)");
+			owner.setIndentationLeft(355f);
+			campaignOwner.setIndentationLeft(355f);
+			
+			
+			
             /*Stellar Donation*/
             Paragraph companyName = new Paragraph("Company name : Stellar Donation",headFont);
             Paragraph companyEmail = new Paragraph("Company email : stellardonation053@gmail.com",headFont);
 
-            companyName.setIndentationLeft(220f);
-            companyEmail.setIndentationLeft(220f);
+            companyName.setIndentationLeft(240f);
+            companyEmail.setIndentationLeft(240f);
             
                      
 	    	PdfWriter.getInstance(document, out);
@@ -121,17 +137,11 @@ public class GeneratePdfReport
 	    	document.add(Chunk.NEWLINE);
 	    	document.add(Chunk.NEWLINE);
 	    	document.add(Chunk.NEWLINE);
-	    	document.add(Chunk.NEWLINE);
-	    	document.add(Chunk.NEWLINE);
-	    	document.add(Chunk.NEWLINE);
-	    	document.add(Chunk.NEWLINE);
-	    	document.add(Chunk.NEWLINE);
-	    	document.add(Chunk.NEWLINE);
-	    	document.add(Chunk.NEWLINE);
-	    	document.add(Chunk.NEWLINE);
-	    	document.add(Chunk.NEWLINE);
-	    	document.add(Chunk.NEWLINE);
+	    	document.add(image1);
+	    	document.add(owner);
 	    	document.add(campaignOwner);
+	    	document.add(Chunk.NEWLINE);
+	    	document.add(Chunk.NEWLINE);
 	    	document.add(Chunk.NEWLINE);
 	    	document.add(Chunk.NEWLINE);
 	    	document.add(Chunk.NEWLINE);
