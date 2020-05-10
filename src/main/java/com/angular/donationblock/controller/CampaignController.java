@@ -71,7 +71,7 @@ public class CampaignController {
         double totalDonate;
         for(Campaign campaign : campaignRepository.findAll())
         {
-            if(campaign.isActive())
+            if(campaign.isActive() && !campaign.isDeleted())
             {
                 totalDonate = 0;
                 for(AccountDonation transaction : accountDonationRepository.
@@ -97,7 +97,7 @@ public class CampaignController {
         double totalDonate;
         for(Campaign campaign : campaignRepository.findAllByUserId(userId))
         {
-            if(campaign.isActive())
+            if(campaign.isActive() && !campaign.isDeleted())
             {
                 totalDonate = 0;
                 for(AccountDonation transaction : accountDonationRepository.
@@ -177,7 +177,7 @@ public class CampaignController {
         double totalDonate;
         for(Campaign campaign : campaignRepository.findCampaignsByCategory(campaignCategory))
         {
-            if(campaign.isActive())
+            if(campaign.isActive() && !campaign.isDeleted())
             {
                 totalDonate = 0;
                 for(AccountDonation transaction : accountDonationRepository.
@@ -194,6 +194,7 @@ public class CampaignController {
         }
         return output;
     }
+
     @GetMapping("/campaigns/{campaignId}")
     public Campaign getCampaignData(@PathVariable Long campaignId)
     {
@@ -266,4 +267,85 @@ public class CampaignController {
         return df.format(totalDonate);
     }
 
+    @PostMapping("/deleteCampaign")
+    public Integer deleteCampaign(@RequestBody String campaignId)
+    {
+        Campaign campaignForm = campaignRepository.findById(Long.parseLong(campaignId)).get();
+        campaignForm.setDeleted(true);
+        campaignRepository.save(campaignForm);
+        return 1;
+    }
+
+    @PostMapping("/finishedCampaign")
+    public void finishedCampaign(@RequestBody String campaignId)
+    {
+        Campaign campaignForm = campaignRepository.findById(Long.parseLong(campaignId)).get();
+        campaignForm.setFinished(true);
+        campaignRepository.save(campaignForm);
+    }
+    //Find campaigns by finishedCampaign
+    @GetMapping("/getFinishedCampaign/{finished}")
+    public List<CampaignModel> getFinishedCampaign(@PathVariable Boolean finished)
+    {
+        List<CampaignModel> output = new ArrayList<CampaignModel>();
+        double totalDonate;
+        for(Campaign campaign : campaignRepository.findCampaignsByFinished(finished))
+        {
+            if(campaign.isActive() && !campaign.isDeleted())
+            {
+                totalDonate = 0;
+                for(AccountDonation transaction : accountDonationRepository.
+                        findAllByCampaignId(campaign.getId()))
+                {
+                    totalDonate += transaction.getExchageRate()*Double.parseDouble(transaction.getAmount());
+                }
+                DecimalFormat df = new DecimalFormat("#.00");
+                output.add(new CampaignModel(campaign.getId(),campaign.isDeleted(),campaign.getUser(),campaign.getTargetDonation(),
+                        campaign.getCampaignName(),campaign.getCategory(),campaign.getFundRaisingAs(),
+                        campaign.getStartDate(),campaign.getCampaignDetail(),campaign.getCoverImagePath(),
+                        campaign.isActive(),df.format(totalDonate)));
+            }
+        }
+        return output;
+    }
+    //Get donate_times from certain campaign
+    @GetMapping("/getDonateTimes/{campaignId}")
+    public Long getDonateTimes(@PathVariable Long campaignId)
+    {
+        Campaign campaign = campaignRepository.findById(campaignId).get();
+        return campaign.getDonateTimes();
+    }
+    //Add donate_times for when campaign get a donation
+    @PostMapping("/addDonateTimes")
+    public void addDonateTimes(@RequestBody CampaignForm campaignForm)
+    {
+        Campaign campaign = campaignRepository.findById(campaignForm.getCampaignId()).get();
+        campaign.setDonateTimes(campaignForm.getDonateTimes());
+        campaignRepository.save(campaign);
+    }
+    //Find campaigns by MostActive
+    @GetMapping("/getMostActive")
+    public List<CampaignModel> getMostActive()
+    {
+        List<CampaignModel> output = new ArrayList<CampaignModel>();
+        double totalDonate;
+        for(Campaign campaign : campaignRepository.findByOrderByDonateTimesDesc())
+        {
+            if(campaign.isActive() && !campaign.isDeleted())
+            {
+                totalDonate = 0;
+                for(AccountDonation transaction : accountDonationRepository.
+                        findAllByCampaignId(campaign.getId()))
+                {
+                    totalDonate += transaction.getExchageRate()*Double.parseDouble(transaction.getAmount());
+                }
+                DecimalFormat df = new DecimalFormat("#.00");
+                output.add(new CampaignModel(campaign.getId(),campaign.isDeleted(),campaign.getUser(),campaign.getTargetDonation(),
+                        campaign.getCampaignName(),campaign.getCategory(),campaign.getFundRaisingAs(),
+                        campaign.getStartDate(),campaign.getCampaignDetail(),campaign.getCoverImagePath(),
+                        campaign.isActive(),df.format(totalDonate)));
+            }
+        }
+        return output;
+    }
 }

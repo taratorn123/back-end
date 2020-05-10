@@ -24,7 +24,8 @@ public class Campaign extends BaseEntity
     private String campaignDetail;
     private String coverImagePath;
     private boolean active;
-    
+    private boolean finished;
+    private Long donateTimes;
     
 
     public void setUser(User user)
@@ -99,6 +100,21 @@ public class Campaign extends BaseEntity
         this.coverImagePath = coverImagePath;
     }
 
+    public boolean isFinished() {
+        return this.finished;
+    }
+
+    public void setFinished(boolean finished) {
+        this.finished = finished;
+    }
+
+    public Long getDonateTimes() {
+        return donateTimes;
+    }
+
+    public void setDonateTimes(Long donateTimes) {
+        this.donateTimes = donateTimes;
+    }
 
     public Campaign(){}
     // standard constructors / setters / getters / toString
