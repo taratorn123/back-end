@@ -13,4 +13,5 @@ public interface UserRepository extends CrudRepository<User, Long> {
     User findByPublicKey(String publicKey);
     User findByEmail(String email);
     List<User> findAllByVerificationFlag(boolean verificationFlag);
+    List<User> findAllByEmail(String email);
 }

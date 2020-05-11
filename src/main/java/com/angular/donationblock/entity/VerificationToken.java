@@ -38,7 +38,7 @@ public class VerificationToken extends BaseEntity
     	this.token = token;
     	this.user = user;
     	/* Token will be expired in 5 minutes after its created*/
-    	this.expiryDate = calculateExpiryDate(5);
+    	this.expiryDate = calculateExpiryDate(60);
     	System.out.println("Verification Token constructor "+this.expiryDate.toString());
     }
 	public String getToken() 

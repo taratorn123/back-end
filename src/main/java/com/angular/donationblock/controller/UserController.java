@@ -3,8 +3,11 @@ package com.angular.donationblock.controller;
 import com.angular.donationblock.config.StellarConfig;
 import com.angular.donationblock.entity.Campaign;
 import com.angular.donationblock.entity.User;
+import com.angular.donationblock.form.PasswordForm;
 import com.angular.donationblock.form.UserForm;
 import com.angular.donationblock.repository.UserRepository;
+import com.angular.donationblock.repository.VerificationTokenRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -42,9 +45,33 @@ public class UserController
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private VerificationTokenRepository tokenRepository;
 	private Server server = new Server(StellarConfig.stellarServer);
 	private Scanner scanner;
 
+	@PostMapping("/resetUserPassword")
+	public boolean resetUserPassword(@RequestBody User user)
+	{
+    	BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    	User systemUser = userRepository.findById(user.getId()).get();
+    	
+    	systemUser.setPassword(passwordEncoder.encode(user.getPassword()));
+    	System.out.println("User Controller : User "+systemUser.getUsername()+" reset password");
+    	userRepository.save(systemUser);
+    	System.out.println("User Controller : reset password success, token "+tokenRepository.findByUserId(user.getId()).getToken()+" removed");
+    	tokenRepository.delete(tokenRepository.findByUserId(user.getId()));
+		return true;
+	}
+	@PostMapping("/findUserAccountByEmail")
+	public boolean recoverUserAccount(@RequestBody String userEmail)
+	{
+		if(userRepository.findAllByEmail(userEmail).isEmpty())
+		{
+			return false;
+		}
+		return true;
+	}
     @GetMapping("/users")
     public List<User> getUsers() 
     {
@@ -75,7 +102,6 @@ public class UserController
         System.out.println("User not found");
         return false;
     }
-
     @GetMapping("/getUserId/{username}")
     public String getUserId(@PathVariable String username)
     {
@@ -116,6 +142,9 @@ public class UserController
     	}
     	return 2;
     }
+    /**
+     * This method use to check privilege level of user
+     * */
     @PostMapping("/checkPrivilege")
     public int checkPrivilege(@RequestBody long userId)
     {
@@ -165,12 +194,42 @@ public class UserController
 	}
 
 	@PostMapping("/current-user/edit")
-	public long addCampaign(@RequestBody User user) throws IOException
+	public int editUser(@RequestBody User user) throws IOException
 	{
-		userRepository.save(user);
+		User systemUser = userRepository.findByEmail(user.getEmail());
+		System.out.println(systemUser.getId()+" "+user.getId());
+		if(systemUser.getId().compareTo(user.getId())==0)
+		{
+			userRepository.save(user);
+		}
+		else
+		{
+			System.out.println("UserController : editUser : email exist");
+			return 2;
+		}
 		return 1;
 	}
-	@PostMapping("userImageSignature")
+	@PostMapping("/editPassword")
+	public boolean editPassword(@RequestBody PasswordForm password)
+	{
+		User user = userRepository.findById(password.getUserId()).get();
+		System.out.println("UserController : editPassword :user "+user.getUsername()+" changing password");
+		System.out.println(password.getCurrentPassword());
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+
+        if(encoder.matches(password.getCurrentPassword(),user.getPassword())) 
+        {
+    		System.out.println("UserController : editPassword : current password matched");
+        	user.setPassword(encoder.encode(password.getNewPassword()));
+    		System.out.println("UserController : editPassword :user "+user.getUsername()+" password changed");
+        	userRepository.save(user);
+        	return true;
+        }
+        System.out.println("UserController : editPassword : current password not matched");
+		return false;
+		
+	}
+	@PostMapping("/userImageSignature")
 	public boolean userImageSignature(@RequestBody User user)
 	{
 		User systemUser = userRepository.findById(user.getId()).get();

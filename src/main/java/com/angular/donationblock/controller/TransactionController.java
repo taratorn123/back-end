@@ -117,48 +117,24 @@ public class TransactionController
     	{
     		return 1;
     	}
-    	System.out.println("Building Transaction");
-    	if(accountDonationForm.getComment() == null)
-    	{
-    		transaction = new Transaction.Builder(account,Network.TESTNET)
-    		        .addOperation(new PaymentOperation.Builder(accountDonation.getCampaign().getUser().getPublicKey(), new AssetTypeNative(), accountDonation.getAmount()).build())
-    		        // Wait a maximum of three minutes for the transaction
-    		        .setTimeout(180)
-    		        .setOperationFee(100)
-    		        .build();
-    		// Sign the transaction to prove you are actually the person sending it.
-    		System.out.println("Signing");
-    		transaction.sign(sourceKey);
-    	}
-    	else
-    	{
-    		transaction = new Transaction.Builder(account,Network.TESTNET)
-    		        .addOperation(new PaymentOperation.Builder(accountDonation.getCampaign().getUser().getPublicKey(), new AssetTypeNative(), accountDonation.getAmount()).build())
-    		        // A memo allows you to add your own metadata to a transaction. It's
-    		        // optional and does not affect how Stellar treats the transaction.
-    		        .addMemo(Memo.text(accountDonation.getComment()))
-    		        // Wait a maximum of three minutes for the transaction
-    		        .setTimeout(180)
-    		        .setOperationFee(100)
-    		        .build();
-    		// Sign the transaction to prove you are actually the person sending it.
-    		System.out.println("Signing");
-    		transaction.sign(sourceKey);
-    	}
     	try 
 		{
+    		System.out.println("Building Transaction");
+        	transaction = new Transaction.Builder(account,Network.TESTNET)
+    		        .addOperation(new PaymentOperation.Builder(accountDonation.getCampaign().getUser().getPublicKey(), new AssetTypeNative(), accountDonation.getAmount()).build())
+    		        // Wait a maximum of three minutes for the transaction
+    		        .setTimeout(30)
+    		        .setOperationFee(100)
+    		        .build();
+    		// Sign the transaction to prove you are actually the person sending it.
+    		System.out.println("Signing");
+    		transaction.sign(sourceKey);
 			System.out.println("Get response from serve");
-			for(int i = 0;i < 10;i++)
+			response = server.submitTransaction(transaction);
+			System.out.println(response.isSuccess());
+			if(!response.isSuccess())
 			{
-				response = server.submitTransaction(transaction);
-				if(response.isSuccess())
-				{
-					break;
-				}
-				if(i == 9)
-				{
-					return 2;
-				}
+				return 2;
 			}
 			/* If transaction failed DecodedTransactionResult will return option.abest() instead of json*/
 			System.out.println("Get Hash");
@@ -229,7 +205,7 @@ public class TransactionController
 									transactionHistory.add(new TransactionModel(transaction.getId(),
 											campaign.getCampaignName(),
 											transaction.getTimestamp(),
-											user.getPublicKey(),
+											"Anonymous",
 											transaction.getAmount(),
 											campaign.getUser().getPublicKey(),
 											transaction.getTransactionHash()));

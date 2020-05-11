@@ -9,5 +9,7 @@ import com.angular.donationblock.entity.Report;
 public interface ReportRepository extends JpaRepository<Report, Long>
 {
 	List<Report> findAllByCampaignId(long campaignId);
+	Report findByUserId(long userId);
+	List<Report> findAllByUserId(long userId);
 
 }

@@ -52,8 +52,10 @@ public class GeneratePdfReport
 	    	transactionNumber.setAlignment(Element.ALIGN_LEFT);
 	    	
 	    	/* Create Transaction table*/
-	    	PdfPTable table = new PdfPTable(3);
-            table.setWidthPercentage(100);
+	    	PdfPTable table = new PdfPTable(4);
+	    	float[] columnWidths = new float[] {20f, 25f, 15f, 15f};
+	    	table.setWidths(columnWidths);
+	    	table.setWidthPercentage(100);
             //table.setWidths(new int[]{3, 3, 3});
             
       
@@ -66,8 +68,12 @@ public class GeneratePdfReport
             hcell = new PdfPCell(new Phrase("Campaign Name", headFont));
             hcell.setHorizontalAlignment(Element.ALIGN_CENTER);
             table.addCell(hcell);
-
-            hcell = new PdfPCell(new Phrase("Amount", headFont));
+            
+            hcell = new PdfPCell(new Phrase("Lumen(XLM)", headFont));
+            hcell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            table.addCell(hcell);
+            
+            hcell = new PdfPCell(new Phrase("Thai baht(THB)", headFont));
             hcell.setHorizontalAlignment(Element.ALIGN_CENTER);
             table.addCell(hcell);
             
@@ -84,8 +90,13 @@ public class GeneratePdfReport
             cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
             cell.setHorizontalAlignment(Element.ALIGN_CENTER);
             table.addCell(cell);
-
+            
             cell = new PdfPCell(new Phrase(transaction.getAmount()));
+            cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            table.addCell(cell);
+            
+            cell = new PdfPCell(new Phrase(DatabaseUtil.decimalConverter(String.valueOf(Double.parseDouble(transaction.getAmount())*transaction.getExchageRate()))));
             cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
             cell.setHorizontalAlignment(Element.ALIGN_CENTER);
             table.addCell(cell);

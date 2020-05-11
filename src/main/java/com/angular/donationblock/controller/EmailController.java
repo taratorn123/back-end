@@ -7,10 +7,13 @@ import java.net.URL;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.UUID;
 import java.util.List;
 
@@ -39,11 +42,14 @@ import org.stellar.sdk.requests.ErrorResponse;
 import org.stellar.sdk.responses.AccountResponse;
 
 import com.angular.donationblock.config.StellarConfig;
+import com.angular.donationblock.entity.Report;
 import com.angular.donationblock.entity.User;
 import com.angular.donationblock.entity.VerificationToken;
 import com.angular.donationblock.form.UserForm;
+import com.angular.donationblock.repository.ReportRepository;
 import com.angular.donationblock.repository.UserRepository;
 import com.angular.donationblock.repository.VerificationTokenRepository;
+import com.itextpdf.text.Paragraph;
 
 @RestController
 @CrossOrigin
@@ -53,22 +59,11 @@ public class EmailController
 	private VerificationTokenRepository tokenRepo;
 	@Autowired
 	private UserRepository userRepo;
+	@Autowired
+	private ReportRepository reportRepo;
 
 	private Server server;
 	private Scanner scanner;
-	
-	private void RemoveExpiredToken() throws ParseException
-	{
-		Date currentDate = getCurrentDate();
-		List<VerificationToken> allToken = (List<VerificationToken>) tokenRepo.findAll();
-		for(VerificationToken checkToken : allToken)
-		{
-			if(checkToken.getExpiryDate().compareTo(currentDate) < 0)
-			{
-				tokenRepo.delete(checkToken);
-			}
-		}
-	}
 	private Date getCurrentDate() throws ParseException
 	{
 		SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
@@ -114,13 +109,211 @@ public class EmailController
 		redirectView.setUrl("http://34.87.165.176/sign-in");
 		return redirectView;
 	}
+	@PostMapping("/sendBeneficiaryReportEmail")
+	public boolean sendBeneficiaryReportEmail(@RequestBody String campaignId)
+	{
+		List<Report> reports = reportRepo.findAllByCampaignId(Long.parseLong(campaignId));
+		StringBuilder reportDetail = new StringBuilder(); 
+		Properties mailProperties = new Properties();
+		mailProperties.put("mail.smtp.auth", "true");
+		mailProperties.put("mail.smtp.starttls.enable","true");
+		mailProperties.put("mail.smtp.host","smtp.gmail.com");
+		mailProperties.put("mail.smtp.port","587");
+		/* Current system Gmail*/
+		String myAccountEmail = "stellardonation053@gmail.com";
+		String password = "aeing785329";
+		System.out.println("before authenticate");
+		Session session = Session.getInstance(mailProperties, new Authenticator()
+				{
+					@Override
+					protected PasswordAuthentication getPasswordAuthentication()
+					{
+						return new PasswordAuthentication(myAccountEmail,password);
+					}
+				});
+
+		/* Sending email to each user that report the campaign */
+		for(Report report : reports)
+		{
+			reportDetail.append(report.getTimestamp()+" : "+report.getDetail()+"\n");
+		}
+		Message message = prepareBeneficiaryReportMessage(session,myAccountEmail,reports.get(0),reportDetail);
+		try
+		{
+//			System.out.println("Email controller : Sending email to user : "+.getUser().getUsername());
+			Transport.send(message);
+			System.out.println("Beneficiary Message send");
+		}
+		catch (MessagingException e)
+		{
+			System.out.println("send message error");
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+
+	
+	@PostMapping("/sendUserRecoverEmail")
+	public boolean sendUserRecoverEmail(@RequestBody String email)
+	{
+		String token = UUID.randomUUID().toString();
+		User user = userRepo.findByEmail(email);
+		VerificationToken prevToken = tokenRepo.findByUserId(user.getId());
+		if(prevToken != null)
+		{
+			System.out.println("Deleting");
+			tokenRepo.deleteById(prevToken.getId());
+		}
+		VerificationToken verificationToken = new VerificationToken(token,user);
+		tokenRepo.save(verificationToken);
+		System.out.println(token);
+		System.out.println("Creating email");
+		/* Setting property for Gmail*/
+		Properties mailProperties = new Properties();
+		mailProperties.put("mail.smtp.auth", "true");
+		mailProperties.put("mail.smtp.starttls.enable","true");
+		mailProperties.put("mail.smtp.host","smtp.gmail.com");
+		mailProperties.put("mail.smtp.port","587");
+		/* Current system Gmail*/
+		String myAccountEmail = "stellardonation053@gmail.com";
+		String password = "aeing785329";
+		System.out.println("before authenticate");
+		Session session = Session.getInstance(mailProperties, new Authenticator()
+				{
+					@Override
+					protected PasswordAuthentication getPasswordAuthentication()
+					{
+						return new PasswordAuthentication(myAccountEmail,password);
+					}
+				});
+		System.out.println("After authenticate");
+		Message message = prepareRecoveryMessage(session,myAccountEmail,user,token);
+		try
+		{
+			Transport.send(message);
+			System.out.println("Email Controller : send recover email to user "+user.getUsername());
+			return true;
+		}
+		catch (MessagingException e)
+		{
+			System.out.println("send message error");
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+	}
+	private Message prepareRecoveryMessage(Session session, String myAccountEmail, User user,String token)
+	{
+		
+		Message message = new MimeMessage(session);
+
+		try
+		{
+			message.setFrom(new InternetAddress(myAccountEmail));
+			message.setRecipient(Message.RecipientType.TO, new InternetAddress(user.getEmail()));
+			message.setSubject("Reset your password");
+			message.setText("Hello "+user.getUsername()+"\n"
+					+ "We got a request to reset your password.\n"
+					+ "---------------------------------------------------------------------------------------------------------------------------\n\n"
+					+ "Please paste this link into your browser.\n"
+					+ "http://34.87.165.176/reset-password?token="+token);
+			return message;
+		}
+		catch (MessagingException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	/**
+	 * This method use to send report email to user
+	 * */
+	@PostMapping("/sendUserReportEmail")
+	public boolean sendUserReportEmail(@RequestBody String campaignId)
+	{
+		
+		List<Report> reports = reportRepo.findAllByCampaignId(Long.parseLong(campaignId));
+		List<Report> distinctReport = reports;
+		Properties mailProperties = new Properties();
+		mailProperties.put("mail.smtp.auth", "true");
+		mailProperties.put("mail.smtp.starttls.enable","true");
+		mailProperties.put("mail.smtp.host","smtp.gmail.com");
+		mailProperties.put("mail.smtp.port","587");
+		/* Current system Gmail*/
+		String myAccountEmail = "stellardonation053@gmail.com";
+		String password = "aeing785329";
+		System.out.println("before authenticate");
+		Session session = Session.getInstance(mailProperties, new Authenticator()
+				{
+					@Override
+					protected PasswordAuthentication getPasswordAuthentication()
+					{
+						return new PasswordAuthentication(myAccountEmail,password);
+					}
+				});
+		/* Remove duplicate user get latest one*/
+		for(int i = distinctReport.size()-1;i >= 0;i--)
+		{
+			if(!distinctReport.get(i).isDeleted())
+			{
+				System.out.println(distinctReport.get(i).getId());
+				for(int j = i-1;j >= 0;j--)
+				{
+					if(distinctReport.get(i).getUser().getUsername().compareTo(distinctReport.get(j).getUser().getUsername()) == 0)
+					{
+						
+						System.out.println("Duplicate user : "+distinctReport.get(j).getUser().getUsername()+" Report Id : "+distinctReport.get(j).getId());
+						distinctReport.remove(j);
+						i--;					
+					}
+				}
+			}
+			else
+			{
+				distinctReport.remove(i);
+			}
+		}
+		/* Sending email to each user that report the campaign */
+		for(Report report : distinctReport)
+		{
+			List<Report> reportForEachUser = reportRepo.findAllByUserId(report.getUser().getId());
+		    StringBuilder reportDetail = new StringBuilder(); 
+			for(Report userReport : reportForEachUser)
+			{
+				if(!userReport.isDeleted())
+				{
+					reportDetail.append(userReport.getTimestamp()+" : "+userReport.getDetail()+"\n");
+				}
+			}
+			System.out.println("After authenticate");
+			Message message = prepareUserReportMessage(session,myAccountEmail,report,reportDetail);
+			try
+			{
+				System.out.println("Email controller : Sending email to user : "+report.getUser().getUsername());
+				Transport.send(message);
+				System.out.println("User Message send");
+			}
+			catch (MessagingException e)
+			{
+				System.out.println("send message error");
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return false;
+			}
+		}
+		return true;
+	}
 	/**
 	 * This method use to sending a email verification link to user from the given email
 	 * @throws IOException 
 	 * @throws MalformedURLException 
 	 * */
 	@PostMapping("/sendmail")
-	public boolean sendMail(@RequestBody String userId) throws MalformedURLException, IOException
+	public boolean sendVerificationEmail(@RequestBody String userId) throws MalformedURLException, IOException
 	{
 		long id = Long.parseLong(userId);
 		System.out.println(userId);
@@ -129,9 +322,6 @@ public class EmailController
 		System.out.println("Verification "+user.getRouteImageVerification());
 		System.out.println("Route "+user.getRouteSignatureImage());
 		String privateKey = null;
-		tokenRepo.findAllById(user.getId());
-
-		System.out.println(tokenRepo.findAllByUserId(id).size());
 		VerificationToken prevToken = tokenRepo.findByUserId(id);
 		if(prevToken != null)
 		{
@@ -209,7 +399,7 @@ public class EmailController
 					}
 				});
 		System.out.println("After authenticate");
-		Message message = prepareMessage(session,myAccountEmail,user.getEmail(),token,user.getUsername(),privateKey,pair.getAccountId());
+		Message message = prepareVerficationMessage(session,myAccountEmail,user.getEmail(),token,user.getUsername(),privateKey,pair.getAccountId());
 		try
 		{
 			Transport.send(message);
@@ -227,7 +417,7 @@ public class EmailController
 	/**
 	 * This method use to create a email instance
 	 * */
-	private Message prepareMessage(Session session,String myAccountEmail,String recepient,String token, String username, 
+	private Message prepareVerficationMessage(Session session,String myAccountEmail,String recepient,String token, String username, 
 			String privateKey, String publicKey)
 	{
 		Message message = new MimeMessage(session);
@@ -254,7 +444,65 @@ public class EmailController
 		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return null;
 		}
-		return null;
+	}
+	private Message prepareUserReportMessage(Session session,String myAccountEmail,Report report,StringBuilder detail)
+	{
+		Message message = new MimeMessage(session);
+
+		try
+		{
+			message.setFrom(new InternetAddress(myAccountEmail));
+			message.setRecipient(Message.RecipientType.TO, new InternetAddress(report.getUser().getEmail()));
+			message.setSubject("Report Campaign");
+			message.setText("Campaign Name : "+report.getCampaign().getCampaignName()+"\n"
+					+ "Campaign Owner : "+report.getCampaign().getUser().getFirstName()+" "+report.getCampaign().getUser().getLastName()+"\n\n"
+					+ "Report Detail\n"
+					+ "--------------------------------------------------------------------------------------------------------\n"
+					+ detail
+					+ "--------------------------------------------------------------------------------------------------------\n\n"
+					+ "Campaign '"+report.getCampaign().getCampaignName()+"' has been suspended from the malicious activity.\n"
+					+ "Thank you "+report.getUser().getFirstName()+" "+report.getUser().getLastName()+".\n\n"
+					+ "Company name : Stellar Donation\n"
+					+ "Company email : stellardonation053@gmail.com\n"
+					);
+			return message;
+		}
+		catch (MessagingException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+	}
+	private Message prepareBeneficiaryReportMessage(Session session,String myAccountEmail,Report report,StringBuilder detail)
+	{
+		Message message = new MimeMessage(session);
+
+		try
+		{
+			message.setFrom(new InternetAddress(myAccountEmail));
+			message.setRecipient(Message.RecipientType.TO, new InternetAddress(report.getCampaign().getUser().getEmail()));
+			message.setSubject("Your campaign has been temporarily suspended");
+			message.setText("Campaign Name : "+report.getCampaign().getCampaignName()+"\n"
+					+ "Campaign Owner : "+report.getCampaign().getUser().getFirstName()+" "+report.getCampaign().getUser().getLastName()+"\n\n"
+					+ "Report Detail\n"
+					+ "--------------------------------------------------------------------------------------------------------\n"
+					+ detail
+					+ "--------------------------------------------------------------------------------------------------------\n\n"
+					+ "Campaign '"+report.getCampaign().getCampaignName()+"' has been suspended from the malicious activity.\n"
+					+ "Please contact us for more detail.\n"
+					+ "Company name : Stellar Donation\n"
+					+ "Company email : stellardonation053@gmail.com\n"
+					);
+			return message;
+		}
+		catch (MessagingException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
 	}
 }

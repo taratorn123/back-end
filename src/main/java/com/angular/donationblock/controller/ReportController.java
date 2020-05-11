@@ -2,7 +2,6 @@ package com.angular.donationblock.controller;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -53,25 +52,10 @@ public class ReportController
 			return false;
 		}
 	}
-//	@GetMapping("/getAllReport")
-//	public List<ReportForm> getAllReport()
-//	{
-//		List<ReportForm> output = new ArrayList<ReportForm>();
-//		List<Report> systemReport = reportRepository.findAll();
-//		for(Report report: systemReport)
-//		{
-//			if(!report.isDeleted())
-//			{
-//				System.out.println(report.getCampaign().getId()+" "+report.getUser().getId()+" "+report.getDetail());
-//				output.add(new ReportForm(report.getCampaign().getId(),
-//						report.getUser().getId(),
-//						report.getDetail(),
-//						report.getTimestamp(),
-//						report.getCampaign().getCampaignName()));
-//			}
-//		}
-//		return output;
-//	}
+
+	/**
+	 * This method use sending all report on each campaign to admin page
+	 * */
 	@GetMapping("/getReportNumber")
 	public List<ReportNumberModel> getReportNumber()
 	{
@@ -85,11 +69,13 @@ public class ReportController
 			{
 				if(hmap.containsKey(report.getCampaign().getId()))
 				{
-					reportForm.add(new ReportForm(report.getCampaign().getId(),
+					hmap.get(report.getCampaign().getId()).add(
+							new ReportForm(report.getCampaign().getId(),
 							report.getUser().getId(),
 							report.getDetail(),
 							report.getTimestamp(),
 							report.getCampaign().getCampaignName()));
+				
 				}
 				else
 				{
@@ -105,6 +91,7 @@ public class ReportController
 		}
 		for (Entry<Long, List<ReportForm>> entry : hmap.entrySet()) 
 		{
+			System.out.println("Report Controller : Sending Report : "+entry.getKey()+" "+campaignRepository.findById(entry.getKey()).get().getCampaignName()+", Report Size "+ entry.getValue().size());
 			reportNumber.add(new ReportNumberModel(entry.getKey(),
 					campaignRepository.findById(entry.getKey()).get().getCampaignName(),entry.getValue().size()));
 		}
