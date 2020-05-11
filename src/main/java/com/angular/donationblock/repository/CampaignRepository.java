@@ -13,5 +13,6 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long>
     List<Campaign> findAllByUserId(Long userId);
     List<Campaign> findCampaignsByCategory(String campaignCategory);
     List<Campaign> findAllByActive(boolean active);
-
+    List<Campaign> findCampaignsByFinished(boolean finished);
+    List<Campaign> findByOrderByDonateTimesDesc();
 }

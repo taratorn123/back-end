@@ -11,7 +11,7 @@ public class CampaignForm
     private String campaignName;
     private String category;
     private String fundRaisingAs;
-
+    private Long donateTimes;
     @Lob
     private String campaignDetail;
 
@@ -77,5 +77,13 @@ public class CampaignForm
 
     public void setCampaignDetail(String campaignDetail) {
         this.campaignDetail = campaignDetail;
+    }
+
+    public Long getDonateTimes() {
+        return donateTimes;
+    }
+
+    public void setDonateTimes(Long donateTimes) {
+        this.donateTimes = donateTimes;
     }
 }
