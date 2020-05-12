@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.text.SimpleDateFormat;
 
 import com.angular.donationblock.entity.AccountDonation;
 import com.itextpdf.text.BaseColor;
@@ -23,6 +24,8 @@ import com.itextpdf.text.pdf.PdfWriter;
 
 public class GeneratePdfReport 
 {
+	private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
 	public static ByteArrayInputStream test(AccountDonation transaction) throws MalformedURLException, IOException
 	{
 		Document document = new Document(); 
@@ -81,7 +84,7 @@ public class GeneratePdfReport
 	    	/*Table detail*/
             PdfPCell cell;
             
-            cell = new PdfPCell(new Phrase(transaction.getTimestamp().toString()));
+            cell = new PdfPCell(new Phrase(dateFormat.format(transaction.getTimestamp())));
             cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
             cell.setHorizontalAlignment(Element.ALIGN_CENTER);
             table.addCell(cell);

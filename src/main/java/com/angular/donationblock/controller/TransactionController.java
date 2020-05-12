@@ -206,7 +206,7 @@ public class TransactionController
 											campaign.getCampaignName(),
 											transaction.getTimestamp(),
 											"Anonymous",
-											transaction.getAmount(),
+											DatabaseUtil.decimalConverter(String.valueOf(Double.parseDouble(transaction.getAmount())*transaction.getExchageRate())),
 											campaign.getUser().getPublicKey(),
 											transaction.getTransactionHash()));
 								}
@@ -216,7 +216,7 @@ public class TransactionController
 											campaign.getCampaignName(),
 											transaction.getTimestamp(),
 											user.getUsername(),
-											transaction.getAmount(),
+											DatabaseUtil.decimalConverter(String.valueOf(Double.parseDouble(transaction.getAmount())*transaction.getExchageRate())),
 											campaign.getUser().getPublicKey(),
 											transaction.getTransactionHash()));
 								}
@@ -276,7 +276,7 @@ public class TransactionController
 									transaction.getCampaign().getCampaignName(),
 									transaction.getTimestamp(),
 									user.getFirstName()+" "+user.getLastName(),
-									transaction.getAmount(),
+									DatabaseUtil.decimalConverter(String.valueOf(Double.parseDouble(transaction.getAmount())*transaction.getExchageRate())),
 									user.getPublicKey(),
 									transaction.getTransactionHash()));
 							System.out.println(transaction.getTimestamp());

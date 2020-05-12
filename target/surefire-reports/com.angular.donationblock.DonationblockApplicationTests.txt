@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.angular.donationblock.DonationblockApplicationTests
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 11.266 s - in com.angular.donationblock.DonationblockApplicationTests
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.819 s - in com.angular.donationblock.DonationblockApplicationTests
