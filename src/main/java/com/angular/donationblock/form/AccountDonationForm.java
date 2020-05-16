@@ -1,5 +1,6 @@
 package com.angular.donationblock.form;
 
+import com.angular.donationblock.util.DatabaseUtil;
 
 public class AccountDonationForm 
 {
@@ -20,7 +21,7 @@ public class AccountDonationForm
 		this.comment=comment;
 		this.anonymousFlag=anonymousFlag;
 		this.privateKey=privateKey;
-		this.exchageRate = exchangeRate;
+		this.exchageRate = Double.parseDouble(DatabaseUtil.decimalConverter(String.valueOf(exchangeRate)));;
 	}
 	public double getExchageRate() 
 	{

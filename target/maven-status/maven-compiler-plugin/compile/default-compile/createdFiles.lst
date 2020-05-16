@@ -14,7 +14,6 @@ com\angular\donationblock\entity\AccountDonation.class
 com\angular\donationblock\entity\Report.class
 com\angular\donationblock\model\ReportNumberModel.class
 com\angular\donationblock\entity\CampaignUpdate.class
-com\angular\donationblock\entity\Organization.class
 com\angular\donationblock\util\AES.class
 com\angular\donationblock\config\WebPermissionConfig.class
 com\angular\donationblock\DonationblockApplication.class

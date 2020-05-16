@@ -5,8 +5,12 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Timestamp;
 import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,8 +37,10 @@ import org.stellar.sdk.responses.operations.PaymentOperationResponse;
 import com.angular.donationblock.config.StellarConfig;
 import com.angular.donationblock.entity.AccountDonation;
 import com.angular.donationblock.entity.Campaign;
+import com.angular.donationblock.entity.User;
 import com.angular.donationblock.repository.AccountDonationRepository;
 import com.angular.donationblock.repository.CampaignRepository;
+import com.angular.donationblock.repository.UserRepository;
 
 @Component
 public class DatabaseUtil
@@ -43,6 +49,12 @@ public class DatabaseUtil
 	private CampaignRepository campaignRepo;
 	@Autowired
 	private AccountDonationRepository accountDonationRepo;
+	@Autowired
+	private UserRepository userRepository;
+	
+	private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss.SSSSSS");
+	
+	private Server server = new Server(StellarConfig.stellarServer);
 	
 	private byte[] getSHA(String input) throws NoSuchAlgorithmException 
     {  
@@ -78,120 +90,232 @@ public class DatabaseUtil
 		DecimalFormat format = new DecimalFormat("0.00"); 		
 		return format.format(tmp);
 	}
-	//@Scheduled(fixedRate = 60*1000)
+	@Scheduled(fixedRate = 60*1000)
 	public void checkSum() throws NoSuchAlgorithmException
 	{
 		List<AccountDonation> campaignTransaction;
 		List<Campaign> allCampaign = campaignRepo.findAll();
 		String prevHashTransaction = null;
 		String prevHashStellar = null;
-		Server server = new Server(StellarConfig.stellarServer);
+		String prevHashTransactionTmp = null;
+		String prevHashStellarTmp = null;
+		String stellarMemo = null;
+		String[] stringSplit = null;
 		try
 		{
+			/*
+			 * Query for all campaign in the system
+			 * */
 			for(Campaign campaign : allCampaign)
 			{
-				System.out.println("*************************************************************************************************************************************************\n");
+				System.out.println("DatabaseUtil : ****************************************** Campaign name : "+campaign.getCampaignName()+" *************************************************" );
 
-				System.out.println("******************************************************** Campaign name : "+campaign.getCampaignName()+" *********************************************************" );
-				if(campaign.getUser() == null)
-				{
-					System.out.println("*************************************************************************************************************************************************\n");
-					continue;
-				}
+				/*
+				 * Get public key from campaign owner
+				 * */
 				String responseAcc = campaign.getUser().getPublicKey();
-				campaignTransaction = accountDonationRepo.findAllByCampaignId(campaign.getId());
+				/*
+				 * Get all transaction that owned this campaign
+				 * */
+//				campaignTransaction = accountDonationRepo.findAllByCampaignId(campaign.getId());
+				campaignTransaction = accountDonationRepo.findAllByCampaignIdOrderByTimestamp(campaign.getId());
+				for(AccountDonation accountDonation : campaignTransaction)
+				{
+					System.out.println(accountDonation.getId());
+					System.out.println(accountDonation.getTimestamp().toString());
+				}
+				/* Request for payment by campaign owner public key*/
 				PaymentsRequestBuilder request = server.payments().forAccount(responseAcc);
 				ArrayList<OperationResponse> paymentsRequest = new ArrayList<OperationResponse>();
+				/*
+				 * This for loop use to count number of recieving payment for each campaign that has been send by our system
+				 * */
 				for(OperationResponse payment : request.execute().getRecords())
 				{
 					if(payment instanceof PaymentOperationResponse)
 					{
-						paymentsRequest.add(payment);
+						stellarMemo = server.transactions().transaction(payment.getTransactionHash()).getMemo().toString();
+						if(stellarMemo.compareTo("")!=0)
+						{
+							stringSplit = stellarMemo.split(";");
+							if(stringSplit.length == 3)
+							{
+								if(((PaymentOperationResponse) payment).getTo().compareTo(responseAcc) == 0 && Long.parseLong(stringSplit[0])==campaign.getId())
+								{
+									
+									System.out.println("DatabaseUtil : Campaign ID : "+stringSplit[0]);
+									System.out.println("DatabaseUtil : Anonymous : "+stringSplit[1]);
+									System.out.println("DatabaseUtil : Exchange Rate : "+stringSplit[2]);
+									System.out.println("DatabaseUtil : Transaction Hash "+payment.getTransactionHash());
+									System.out.println("DatabaseUtil : Amount "+((PaymentOperationResponse) payment).getAmount());
+									paymentsRequest.add(payment);
+								}
+							}
+
+						}
 					}
 				}
+				System.out.println("DatabaseUtil : Campaign Transaction : "+campaignTransaction.size()+" Stellar Transaction : "+paymentsRequest.size());
+
 				if(campaignTransaction.size() != paymentsRequest.size())
 				{
-					System.out.println("Campaign Transaction : "+campaignTransaction.size()+" Stellar Transaction : "+paymentsRequest.size());
-					System.out.println("Unequal");
+					System.out.println("DatabaseUtil : Transaction size unequal");
+					try 
+					{
+						restoreRemovedTransaction(paymentsRequest,campaignTransaction);
+						campaignTransaction = accountDonationRepo.findAllByCampaignIdOrderByTimestamp(campaign.getId());
+					} 
+					catch (ParseException e) 
+					{
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
-				if(!campaignTransaction.isEmpty())
+				if(!campaignTransaction.isEmpty() && !paymentsRequest.isEmpty())
 				{
 					for(int i = 0;i < paymentsRequest.size();i++)
 					{
-						
+						int check = 0;
+						boolean anonymous = false;
 						OperationResponse payment = paymentsRequest.get(i);
+						stellarMemo = server.transactions().transaction(payment.getTransactionHash()).getMemo().toString();
+						stringSplit = stellarMemo.split(";");
 						AccountDonation donation = campaignTransaction.get(i);
-						System.out.println("========>> Comparison Checking <<========");
-						if(donation.getTransactionHash().compareTo(payment.getTransactionHash()) == 0)
+						System.out.println("DatabaseUtil : ========>> Comparison Checking <<========");
+						while(true)
 						{
-							System.out.println("Transaction Hash");
+							/*Check Transaction hash*/
+							System.out.println("DatabaseUtil : TransactionHash : "+donation.getTransactionHash()+", "+payment.getTransactionHash());
+							if(donation.getTransactionHash().compareTo(payment.getTransactionHash()) == 0)
+							{
+								check++;
+							}
+							else
+							{
+								System.out.println("DatabaseUtil : TransactionHash : Conflict");
+								donation.setTransactionHash(payment.getTransactionHash());
+								accountDonationRepo.save(donation);
+							}
+							/*Check transaction amount*/
+							System.out.println("DatabaseUtil : Amount :"+decimalConverter(donation.getAmount())+", "+decimalConverter(((PaymentOperationResponse) payment).getAmount()));
 							if(decimalConverter(donation.getAmount()).compareTo(decimalConverter(((PaymentOperationResponse) payment).getAmount())) == 0)
 							{
-								System.out.println("Amount");
-								if(donation.getUser().getPublicKey().compareTo(((PaymentOperationResponse) payment).getFrom()) == 0)
-								{
-									System.out.println("Public Key");
-									if(donation.getCampaign().getUser().getPublicKey().compareTo(((PaymentOperationResponse) payment).getTo()) == 0)
-									{
-										System.out.println("transactionHash : "+donation.getTransactionHash()+", "+payment.getTransactionHash()+"\n"
-												+"amount :"+decimalConverter(donation.getAmount())+", "+decimalConverter(((PaymentOperationResponse) payment).getAmount())+"\n"
-												+"Donor :"+donation.getUser().getPublicKey()+", "+((PaymentOperationResponse) payment).getFrom()+"\n"
-												+"Receiver :"+donation.getCampaign().getUser().getPublicKey()+", "+((PaymentOperationResponse) payment).getTo());
-										System.out.println("========>> All equal");
-										
-									}
-								}
-							}							
+								check++;
+							}
+							else
+							{
+								System.out.println("DatabaseUtil : Amount : Conflict");
+								donation.setAmount(decimalConverter(((PaymentOperationResponse) payment).getAmount()));
+								accountDonationRepo.save(donation);
+
+							}
+							/*Check receiver or beneficiary*/
+							System.out.println("DatabaseUtil : Beneficiary Public Key : "+donation.getCampaign().getUser().getPublicKey()+", "+ ((PaymentOperationResponse) payment).getTo());
+							if(donation.getCampaign().getUser().getPublicKey().compareTo(((PaymentOperationResponse) payment).getTo()) == 0)
+							{
+								check++;
+							}
+							else
+							{
+								System.out.println("DatabaseUtil : Beneficiary Public Key : Conflict");
+								donation.setCampaign(campaignRepo.findById(Long.parseLong(stringSplit[0])).get());
+								accountDonationRepo.save(donation);
+							}
+							/*Check sender or donor*/
+							System.out.println("DatabaseUtil : Donor Public Key : "+donation.getUser().getPublicKey()+", "+ ((PaymentOperationResponse) payment).getFrom());
+							if(donation.getUser().getPublicKey().compareTo(((PaymentOperationResponse) payment).getFrom()) == 0)
+							{
+								check++;
+							}
+							else
+							{
+								System.out.println("DatabaseUtil : Donor Public Key : Conflict");
+								User user = userRepository.findByPublicKey(((PaymentOperationResponse) payment).getTo());
+								donation.setUser(user);
+								accountDonationRepo.save(donation);
+							}
+							/*Check exchange rate*/
+							System.out.println("DatabaseUtil : Exchange Rate : "+donation.getExchageRate()+", "+ Double.parseDouble(stringSplit[2]));
+							if(donation.getExchageRate() == Double.parseDouble(stringSplit[2]))
+							{
+								check++;
+							}
+							else
+							{
+								System.out.println("DatabaseUtil : Exchange : Conflict");
+								donation.setExchangeRate(Double.parseDouble(stringSplit[2]));
+								accountDonationRepo.save(donation);
+							}
+							/*Check Anonymous*/
+							System.out.println("DatabaseUtil : Anonymous : "+donation.getAnonymousFlag()+", "+ Boolean.parseBoolean(stringSplit[1]));
+							if(donation.getAnonymousFlag() == Boolean.parseBoolean(stringSplit[1]))
+							{
+								check++;
+							}
+							else
+							{
+								donation.setAnonymousFlag(Boolean.parseBoolean(stringSplit[1]));
+								accountDonationRepo.save(donation);
+							}
+							/*Check all data information*/
+							if(check == 6)
+							{
+								System.out.println("DatabaseUtil : ========>> Transaction information All equal");
+								break;
+							}
+							else
+							{
+								System.out.println("DatabaseUtil : ========>> Transaction information NOT equal");
+							}
+							/* Reset check*/
+							check=0;
 						}
-						
-						if(prevHashTransaction == null && prevHashStellar == null)
-						{	
-							System.out.println("Hash null");
-							prevHashTransaction = transactionHash(donation.getTransactionHash(),
-									decimalConverter(donation.getAmount()),
-									donation.getUser().getPublicKey(),
-									donation.getCampaign().getUser().getPublicKey(),
-									null);
-							prevHashStellar = transactionHash(payment.getTransactionHash(),
-									decimalConverter(((PaymentOperationResponse) payment).getAmount()),
-									((PaymentOperationResponse) payment).getFrom(),
-									((PaymentOperationResponse) payment).getTo(),
-									null);
-						}
-						else
-						{
-							prevHashTransaction = transactionHash(donation.getTransactionHash(),
-									decimalConverter(donation.getAmount()),
-									donation.getUser().getPublicKey(),
-									donation.getCampaign().getUser().getPublicKey(),
-									prevHashTransaction);
-							prevHashStellar = transactionHash(payment.getTransactionHash(),
-									decimalConverter(((PaymentOperationResponse) payment).getAmount()),
-									((PaymentOperationResponse) payment).getFrom(),
-									((PaymentOperationResponse) payment).getTo(),
-									prevHashStellar);
-						}
-						System.out.println("System "+prevHashTransaction+" Stellar "+prevHashStellar);
-						if(prevHashTransaction.compareTo(prevHashStellar) != 0)
-						{
-							System.out.println("Hash conflicted");
-							restoreTransactionData(donation,payment);
-						}
+//						if(prevHashTransaction == null && prevHashStellar == null)
+//						{	
+//							prevHashTransaction = transactionHash(donation.getTransactionHash(),
+//									decimalConverter(donation.getAmount()),
+//									donation.getUser().getPublicKey(),
+//									donation.getCampaign().getUser().getPublicKey(),
+//									null);
+//							prevHashStellar = transactionHash(payment.getTransactionHash(),
+//									decimalConverter(((PaymentOperationResponse) payment).getAmount()),
+//									((PaymentOperationResponse) payment).getFrom(),
+//									((PaymentOperationResponse) payment).getTo(),
+//									null);
+//						}
+//						else
+//						{
+//							prevHashTransaction = transactionHash(donation.getTransactionHash(),
+//									decimalConverter(donation.getAmount()),
+//									donation.getUser().getPublicKey(),
+//									donation.getCampaign().getUser().getPublicKey(),
+//									prevHashTransaction);
+//							prevHashStellar = transactionHash(payment.getTransactionHash(),
+//									decimalConverter(((PaymentOperationResponse) payment).getAmount()),
+//									((PaymentOperationResponse) payment).getFrom(),
+//									((PaymentOperationResponse) payment).getTo(),
+//									prevHashStellar);
+//						}
+//						System.out.println("DatabaseUtil : System "+prevHashTransaction+" Stellar "+prevHashStellar);
+//						if(prevHashTransaction.compareTo(prevHashStellar) != 0)
+//						{
+//							System.out.println("DatabaseUtil : Data hash conflicted");
+//							restoreTransactionData(donation,payment);
+//						}
 					}
 				}
-				System.out.println("*************************************************************************************************************************************************\n");
+				System.out.println("DatabaseUtil : *************************************************************************************************************************************************\n");
 			}
-			if(prevHashTransaction.compareTo(prevHashStellar) == 0)
-			{
-				System.out.println("Database equal");
-			}	
-			else
-			{
-				System.out.println("Database not equal");
-				//restoreDatabase();
-			}
+//			if(prevHashTransaction.compareTo(prevHashStellar) == 0)
+//			{
+//				System.out.println("DatabaseUtil : Database equal");
+//			}	
+//			else
+//			{
+//				System.out.println("DatabaseUtil : Database not equal");
+//			}
 		}
-		catch (TooManyRequestsException | NoSuchAlgorithmException | IOException e) 
+		catch (TooManyRequestsException | IOException e) 
 		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -202,7 +326,10 @@ public class DatabaseUtil
 		}
 		
 	}
-	public String transactionHash(String transactionHash, String amount, String senderPublicKey, String receiverPublicKey, String prevHash) throws NoSuchAlgorithmException
+	/**
+	 * This method use digest transaction detail
+	 * */
+	private String transactionHash(String transactionHash, String amount, String senderPublicKey, String receiverPublicKey, String prevHash) throws NoSuchAlgorithmException
 	{
 		String hashTransaction = toHexString(getSHA(transactionHash));
 		String hashAmount = toHexString(getSHA(amount));
@@ -214,6 +341,76 @@ public class DatabaseUtil
 		}
 		return toHexString(getSHA(prevHash+hashTransaction+hashAmount+hashSender+hashReceiver));
 	}
+	private void restoreRemovedTransaction(ArrayList<OperationResponse> payments,List<AccountDonation> transactions) throws IOException, ParseException
+	{
+		int counter = 0;
+		boolean found = false;
+		if(payments.size() < transactions.size())
+		{
+			for(AccountDonation transaction : transactions)
+			{
+				for(OperationResponse payment : payments)
+				{
+					if(payment.getTransactionHash() == transaction.getTransactionHash())
+					{
+						found = true;
+//						payments.remove(payment);
+					}
+				}
+				if(!found)
+				{
+					System.out.println("DatabaseUtil : Remove transaction ID : "+transaction.getId());
+					accountDonationRepo.delete(transaction);
+				}
+				found = false;
+			}
+		}
+		else
+		{
+			for(OperationResponse payment : payments)
+			{
+				if(transactions.size() > 0)
+				{
+					for(AccountDonation transaction : transactions)
+					{
+						System.out.println("DatabaseUtil : Comparing transaction in database restoring process "+payment.getTransactionHash()+" "+transaction.getTransactionHash());
+						if(payment.getTransactionHash().compareTo(transaction.getTransactionHash()) == 0)
+						{
+							found = true;
+							System.out.println("DatabaseUtil : Transaction "+transaction.getId()+" found");
+//							transactions.remove(transaction);
+						}
+					}
+				}
+				if(!found)
+				{
+					String stellarMemo = server.transactions().transaction(payment.getTransactionHash()).getMemo().toString();
+					String[] information = stellarMemo.split(";");
+					/* Restore information from stellar ledger*/
+					User donor = userRepository.findByPublicKey(((PaymentOperationResponse) payment).getFrom());
+					Campaign campaign = campaignRepo.findById(Long.parseLong(information[0])).get();
+					boolean anonymousFlag = Boolean.parseBoolean(information[1]);
+					double exchangeRate = Double.parseDouble(information[2]);
+					
+					String[] tmpSplit1 = payment.getCreatedAt().split("T");
+					String[] tmpSplit2 = tmpSplit1[1].split("Z");
+					String date = tmpSplit1[0]+" "+tmpSplit2[0]+".000000";
+					String amount = ((PaymentOperationResponse) payment).getAmount();
+					String transactionHash = payment.getTransactionHash();
+					Date parsedDate = dateFormat.parse(date);
+					Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
+					System.out.println("DatabaseUtil : Adding Transaction for campaign "+campaign.getId());
+					accountDonationRepo.save(new AccountDonation(donor,campaign,amount,anonymousFlag,
+							exchangeRate,transactionHash,timestamp));
+				}
+				found = false;
+			}
+		}
+	}
+	
+	/**
+	 * This method use restore data when system data conlict with stellar data
+	 * */
 	private void restoreTransactionData(AccountDonation campaignTransaction, OperationResponse payment)
 	{
 		if(campaignTransaction.getTransactionHash().compareTo(payment.getTransactionHash()) == 0)
@@ -241,6 +438,7 @@ public class DatabaseUtil
 			}
 			else
 			{
+				System.out.println("DatabaseUtil : Restoring transaction " +campaignTransaction.getId());
 				campaignTransaction.setAmount(decimalConverter(((PaymentOperationResponse) payment).getAmount()));
 			}
 		}

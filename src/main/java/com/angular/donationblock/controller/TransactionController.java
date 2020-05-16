@@ -44,22 +44,31 @@ import org.stellar.sdk.Transaction;
 import org.stellar.sdk.requests.ErrorResponse;
 import org.stellar.sdk.requests.PaymentsRequestBuilder;
 import org.stellar.sdk.requests.TooManyRequestsException;
+import org.stellar.sdk.requests.TransactionsRequestBuilder;
 import org.stellar.sdk.responses.AccountResponse;
 import org.stellar.sdk.responses.SubmitTransactionResponse;
+import org.stellar.sdk.responses.TransactionResponse;
 import org.stellar.sdk.responses.operations.OperationResponse;
 import org.stellar.sdk.responses.operations.PaymentOperationResponse;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 @RestController
 
@@ -77,7 +86,7 @@ public class TransactionController
     private UserRepository userRepository;
     private Server server = new Server(StellarConfig.stellarServer);
     static Map<String, String> requestParams = new HashMap<>();
-    
+
     @PostMapping("/sendDonation")
     public int addToStellar(@RequestBody AccountDonationForm accountDonationForm) throws IOException 
     {
@@ -125,6 +134,8 @@ public class TransactionController
     		        // Wait a maximum of three minutes for the transaction
     		        .setTimeout(30)
     		        .setOperationFee(100)
+    		        /* Add memo in order to determine system transaction in stellar ledger*/
+    		        .addMemo(Memo.text(accountDonationForm.getCampaignId()+";"+accountDonationForm.getAnonymousFlag()+";"+accountDonationForm.getExchageRate()))
     		        .build();
     		// Sign the transaction to prove you are actually the person sending it.
     		System.out.println("Signing");

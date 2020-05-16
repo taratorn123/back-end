@@ -45,6 +45,19 @@ public class AccountDonation extends BaseEntity
     	this.exchangeRate = exchangeRate;
     }
 
+	public AccountDonation(User user, Campaign campaign, String amount, 
+			boolean anonymousFlag, double exchangeRate, String transactionHash,
+			Timestamp timestamp)
+	{
+		this.user= user;
+		this.campaign = campaign;
+		this.amount = amount;
+		this.anonymousFlag = anonymousFlag;
+		this.exchangeRate = exchangeRate;
+		this.transactionHash = transactionHash;
+		this.timestamp = timestamp;
+		
+	}
 	public double getExchageRate() 
     {
 		return exchangeRate;
@@ -89,10 +102,32 @@ public class AccountDonation extends BaseEntity
 	{
 		return user;
 	}
+	public void setUser(User user)
+	{
+		this.user = user;
+	}
+	public void setCampaign(Campaign campaign)
+	{
+		this.campaign = campaign;
+	}
+	public double getExchangeRate() 
+	{
+		return exchangeRate;
+	}
+
+	public void setExchangeRate(double exchangeRate) 
+	{
+		this.exchangeRate = exchangeRate;
+	}
+
 	public String toString()
 	{
 		return "ID : "+this.getId()+" From "+this.getUser().getUsername()+
 				" To "+this.getCampaign().getCampaignName()+" Amount "+this.getAmount();
+	}
+	public void setAnonymousFlag(boolean anonymousFlag)
+	{
+		this.anonymousFlag = anonymousFlag;
 	}
 //	@GetMapping("getTotalDonate/{campaignId}")
 //    public String getTotalDonate(@PathVariable long campaignId)
