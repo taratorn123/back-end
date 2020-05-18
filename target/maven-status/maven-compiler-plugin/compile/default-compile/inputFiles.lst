@@ -1,4 +1,5 @@
 D:\GithubJr\back-end\src\main\java\com\angular\donationblock\entity\Report.java
+D:\GithubJr\back-end\src\main\java\com\angular\donationblock\controller\TokenController.java
 D:\GithubJr\back-end\src\main\java\com\angular\donationblock\form\UserForm.java
 D:\GithubJr\back-end\src\main\java\com\angular\donationblock\controller\TransactionController.java
 D:\GithubJr\back-end\src\main\java\com\angular\donationblock\repository\CampaignRepository.java
@@ -19,12 +20,13 @@ D:\GithubJr\back-end\src\main\java\com\angular\donationblock\repository\ReportRe
 D:\GithubJr\back-end\src\main\java\com\angular\donationblock\repository\VerificationTokenRepository.java
 D:\GithubJr\back-end\src\main\java\com\angular\donationblock\model\CampaignModel.java
 D:\GithubJr\back-end\src\main\java\com\angular\donationblock\DonationblockApplication.java
+D:\GithubJr\back-end\src\main\java\com\angular\donationblock\util\BackUpDBU.java
 D:\GithubJr\back-end\src\main\java\com\angular\donationblock\repository\AccountDonationRepository.java
 D:\GithubJr\back-end\src\main\java\com\angular\donationblock\repository\CampaignUpdateRepository.java
+D:\GithubJr\back-end\src\main\java\com\angular\donationblock\form\PasswordForm.java
 D:\GithubJr\back-end\src\main\java\com\angular\donationblock\form\ReportForm.java
 D:\GithubJr\back-end\src\main\java\com\angular\donationblock\entity\User.java
 D:\GithubJr\back-end\src\main\java\com\angular\donationblock\util\DatabaseUtil.java
-D:\GithubJr\back-end\src\main\java\com\angular\donationblock\entity\Organization.java
 D:\GithubJr\back-end\src\main\java\com\angular\donationblock\form\AccountDonationForm.java
 D:\GithubJr\back-end\src\main\java\com\angular\donationblock\form\CampaignForm.java
 D:\GithubJr\back-end\src\main\java\com\angular\donationblock\model\ReportNumberModel.java

@@ -234,6 +234,7 @@ public class UserController
 	{
 		User systemUser = userRepository.findById(user.getId()).get();
 		systemUser.setRouteSignatureImage(user.getRouteSignatureImage());
+		systemUser.setVerificationFlag(true);
 		userRepository.save(systemUser);
 		return true;
 	}

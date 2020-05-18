@@ -10,6 +10,7 @@ public class TransactionModel
 	private String userName;
 	private String amount;
 	private String transactionHash;
+	private String baht;
 	
 	public long getTransactionId() {
 		return transactionId;
@@ -72,4 +73,5 @@ public class TransactionModel
 	{
 		return this.campaignName+" amount "+this.amount+" by "+this.userName;
 	}
+
 }

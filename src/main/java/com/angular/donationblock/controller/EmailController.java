@@ -64,6 +64,7 @@ public class EmailController
 
 	private Server server;
 	private Scanner scanner;
+	private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	private Date getCurrentDate() throws ParseException
 	{
 		SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
@@ -135,7 +136,7 @@ public class EmailController
 		/* Sending email to each user that report the campaign */
 		for(Report report : reports)
 		{
-			reportDetail.append(report.getTimestamp()+" : "+report.getDetail()+"\n");
+			reportDetail.append(dateFormat.format(report.getTimestamp())+" : "+report.getDetail()+"\n");
 		}
 		Message message = prepareBeneficiaryReportMessage(session,myAccountEmail,reports.get(0),reportDetail);
 		try
@@ -235,7 +236,6 @@ public class EmailController
 	@PostMapping("/sendUserReportEmail")
 	public boolean sendUserReportEmail(@RequestBody String campaignId)
 	{
-		
 		List<Report> reports = reportRepo.findAllByCampaignId(Long.parseLong(campaignId));
 		List<Report> distinctReport = reports;
 		Properties mailProperties = new Properties();
@@ -286,7 +286,7 @@ public class EmailController
 			{
 				if(!userReport.isDeleted())
 				{
-					reportDetail.append(userReport.getTimestamp()+" : "+userReport.getDetail()+"\n");
+					reportDetail.append(dateFormat.format(userReport.getTimestamp())+" : "+userReport.getDetail()+"\n");
 				}
 			}
 			System.out.println("After authenticate");
