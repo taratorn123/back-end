@@ -90,7 +90,7 @@ public class DatabaseUtil
 		DecimalFormat format = new DecimalFormat("0.00"); 		
 		return format.format(tmp);
 	}
-	@Scheduled(fixedRate = 60*1000)
+//	@Scheduled(fixedRate = 60*1000)
 	public void checkSum() throws NoSuchAlgorithmException
 	{
 		List<AccountDonation> campaignTransaction;
@@ -411,42 +411,42 @@ public class DatabaseUtil
 	/**
 	 * This method use restore data when system data conlict with stellar data
 	 * */
-	private void restoreTransactionData(AccountDonation campaignTransaction, OperationResponse payment)
-	{
-		if(campaignTransaction.getTransactionHash().compareTo(payment.getTransactionHash()) == 0)
-		{
-			System.out.println("Transaction Hash");
-			if(decimalConverter(campaignTransaction.getAmount()).compareTo(decimalConverter(((PaymentOperationResponse) payment).getAmount())) == 0)
-			{
-				System.out.println("Amount");
-				if(campaignTransaction.getUser().getPublicKey().compareTo(((PaymentOperationResponse) payment).getFrom()) == 0)
-				{
-					System.out.println("Public Key");
-					if(campaignTransaction.getCampaign().getUser().getPublicKey().compareTo(((PaymentOperationResponse) payment).getTo()) == 0)
-					{
-						System.out.println("========>> All equal");
-					}
-					else
-					{
-						System.out.println("Conflicted receiver public key");
-					}
-				}
-				else
-				{
-					System.out.println("Conflicted sender public key");
-				}
-			}
-			else
-			{
-				System.out.println("DatabaseUtil : Restoring transaction " +campaignTransaction.getId());
-				campaignTransaction.setAmount(decimalConverter(((PaymentOperationResponse) payment).getAmount()));
-			}
-		}
-		else
-		{
-			campaignTransaction.setTransactionHash(payment.getTransactionHash());
-		}
-		accountDonationRepo.save(campaignTransaction);
-		
-	}
+//	private void restoreTransactionData(AccountDonation campaignTransaction, OperationResponse payment)
+//	{
+//		if(campaignTransaction.getTransactionHash().compareTo(payment.getTransactionHash()) == 0)
+//		{
+//			System.out.println("Transaction Hash");
+//			if(decimalConverter(campaignTransaction.getAmount()).compareTo(decimalConverter(((PaymentOperationResponse) payment).getAmount())) == 0)
+//			{
+//				System.out.println("Amount");
+//				if(campaignTransaction.getUser().getPublicKey().compareTo(((PaymentOperationResponse) payment).getFrom()) == 0)
+//				{
+//					System.out.println("Public Key");
+//					if(campaignTransaction.getCampaign().getUser().getPublicKey().compareTo(((PaymentOperationResponse) payment).getTo()) == 0)
+//					{
+//						System.out.println("========>> All equal");
+//					}
+//					else
+//					{
+//						System.out.println("Conflicted receiver public key");
+//					}
+//				}
+//				else
+//				{
+//					System.out.println("Conflicted sender public key");
+//				}
+//			}
+//			else
+//			{
+//				System.out.println("DatabaseUtil : Restoring transaction " +campaignTransaction.getId());
+//				campaignTransaction.setAmount(decimalConverter(((PaymentOperationResponse) payment).getAmount()));
+//			}
+//		}
+//		else
+//		{
+//			campaignTransaction.setTransactionHash(payment.getTransactionHash());
+//		}
+//		accountDonationRepo.save(campaignTransaction);
+//		
+//	}
 }
