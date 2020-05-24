@@ -188,73 +188,34 @@ public class TransactionController
     		return transactionHistory;
     	}
     	System.out.println("Get history Transaction");
-    	Server server = new Server(StellarConfig.stellarServer);
-    	String responseAcc = campaign.getUser().getPublicKey();
-    	System.out.println("Campaign owner public key : "+responseAcc);
-    	PaymentsRequestBuilder paymentsRequest = server.payments().forAccount(responseAcc);
-		try 
-		{
-			ArrayList<OperationResponse> payments = paymentsRequest.execute().getRecords();
-			System.out.println("getHistoryTransactionCampaign stellar trasnaction number: "+payments.size());
 
-			for(OperationResponse payment : payments)
-			{
-				if (payment instanceof PaymentOperationResponse) 
-				{
-					
-					User user = userRepository.findByPublicKey(((PaymentOperationResponse) payment).getFrom());
-					if(user != null)
-					{
-						for(AccountDonation transaction : systemTransaction)
-						{
-							System.out.println(transaction.getTransactionHash()+" Stellar : "+payment.getTransactionHash());
-							if(transaction.getTransactionHash().compareTo(payment.getTransactionHash()) == 0)
-							{
-								System.out.println(transaction.getTransactionHash()+"\n"+payment.getTransactionHash());
-								if(transaction.getAnonymousFlag() == true)
-								{
-									transactionHistory.add(new TransactionModel(transaction.getId(),
-											campaign.getCampaignName(),
-											transaction.getTimestamp(),
-											"Anonymous",
-											DatabaseUtil.decimalConverter(String.valueOf(Double.parseDouble(transaction.getAmount())*transaction.getExchageRate())),
-											campaign.getUser().getPublicKey(),
-											transaction.getTransactionHash()));
-								}
-								else
-								{
-									transactionHistory.add(new TransactionModel(transaction.getId(),
-											campaign.getCampaignName(),
-											transaction.getTimestamp(),
-											user.getUsername(),
-											DatabaseUtil.decimalConverter(String.valueOf(Double.parseDouble(transaction.getAmount())*transaction.getExchageRate())),
-											campaign.getUser().getPublicKey(),
-											transaction.getTransactionHash()));
-								}
-								systemTransaction.remove(transaction);
-								break;
-							}					
-						}
-					}
-				}
-			}
-			for(TransactionModel transaction : transactionHistory)
-			{
-				System.out.println(transaction.toString());
-			}
-		}
-		catch (TooManyRequestsException | IOException e1) 
-		{
-			// TODO Auto-generated catch b0lock
-			e1.printStackTrace();
-		} 
-		catch (ErrorResponse e2)
-		{
-			System.out.println("Body "+e2.getBody());
-			System.out.println("Message "+e2.getMessage());
-			System.out.println("GetCause "+e2.getCause());
-			System.out.println("To string "+e2.toString());
-		}
+    	for(AccountDonation transaction : systemTransaction)
+    	{
+    		if(transaction.getAnonymousFlag() == true)
+    		{
+    			transactionHistory.add(new TransactionModel(transaction.getId(),
+    					campaign.getCampaignName(),
+    					transaction.getTimestamp(),
+    					"Anonymous",
+    					DatabaseUtil.decimalConverter(String.valueOf(Double.parseDouble(transaction.getAmount())*transaction.getExchageRate())),
+    					campaign.getUser().getPublicKey(),
+    					transaction.getTransactionHash()));
+    		}
+    		else
+    		{
+    			transactionHistory.add(new TransactionModel(transaction.getId(),
+    					campaign.getCampaignName(),
+    					transaction.getTimestamp(),
+    					transaction.getUser().getUsername(),
+    					DatabaseUtil.decimalConverter(String.valueOf(Double.parseDouble(transaction.getAmount())*transaction.getExchageRate())),
+    					campaign.getUser().getPublicKey(),
+    					transaction.getTransactionHash()));
+    		}
+    	}
+    	for(TransactionModel transaction : transactionHistory)
+    	{
+    		System.out.println(transaction.toString());
+    	}
 		return (List<TransactionModel>) transactionHistory;
     }
     

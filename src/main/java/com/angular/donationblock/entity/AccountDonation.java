@@ -44,6 +44,18 @@ public class AccountDonation extends BaseEntity
     	this.anonymousFlag = anonymousFlag;
     	this.exchangeRate = exchangeRate;
     }
+	public AccountDonation(User user, Campaign campaign, String amount, 
+			String comment, boolean anonymousFlag,double exchangeRate, String transactionHash)
+    {
+    	this.user = user;
+    	this.campaign = campaign;
+    	this.amount = amount;
+    	this.comment = comment;
+    	this.anonymousFlag = anonymousFlag;
+    	this.exchangeRate = exchangeRate;
+    	this.transactionHash = transactionHash;
+    	this.setDeleted(false);
+    }
 
 	public AccountDonation(User user, Campaign campaign, String amount, 
 			boolean anonymousFlag, double exchangeRate, String transactionHash,
